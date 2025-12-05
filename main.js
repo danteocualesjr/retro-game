@@ -185,7 +185,6 @@ function updateEnemies(dt) {
     e.x += Math.sin(performance.now() * 0.002 + e.phase) * 40 * dt;
     if (e.y - e.h > canvas.height + 20) {
       enemies.splice(i, 1);
-      loseLife();
     }
   }
 }

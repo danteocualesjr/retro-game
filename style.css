@@ -33,6 +33,11 @@ body {
   border: 2px solid #2d9eff;
   border-radius: 4px;
   text-shadow: 0 0 6px #2d9eff;
+  flex-wrap: wrap;
+}
+
+.top-bar {
+  flex-wrap: nowrap;
 }
 
 .title {
@@ -40,10 +45,19 @@ body {
   letter-spacing: 2px;
 }
 
+.controls-legend {
+  display: flex;
+  gap: 12px;
+  font-size: 9px;
+  color: #90e0ff;
+  flex-shrink: 0;
+}
+
 .hud {
   display: flex;
   gap: 16px;
   font-size: 12px;
+  flex-shrink: 0;
 }
 
 .playfield {
