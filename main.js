@@ -112,7 +112,19 @@ function hideOverlay() {
 function updateHud() {
   scoreEl.textContent = state.score;
   waveEl.textContent = state.wave;
-  livesEl.textContent = player.lives;
+  
+  // Render hearts for lives
+  const maxLives = 3;
+  let heartsHTML = '';
+  for (let i = 0; i < maxLives; i++) {
+    if (i < player.lives) {
+      heartsHTML += '<span class="heart">♥</span>';
+    } else {
+      heartsHTML += '<span class="heart empty">♡</span>';
+    }
+  }
+  livesEl.innerHTML = heartsHTML;
+  
   highScoreEl.textContent = state.highScore;
 }
 

@@ -144,3 +144,22 @@ button:hover {
   color: #90e0ff;
 }
 
+.hearts {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.heart {
+  color: #ff5b4d;
+  font-size: 14px;
+  line-height: 1;
+  text-shadow: 0 0 4px rgba(255, 91, 77, 0.8);
+}
+
+.heart.empty {
+  color: #666;
+  opacity: 0.4;
+  text-shadow: none;
+}
+
