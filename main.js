@@ -322,12 +322,64 @@ function drawEnemies() {
   for (const e of enemies) {
     ctx.save();
     ctx.translate(e.x, e.y);
-    ctx.fillStyle = '#ff5b4d';
-    ctx.fillRect(-e.w / 2, -e.h / 2, e.w, e.h);
-    ctx.fillStyle = '#1b0b0b';
-    ctx.fillRect(-e.w / 2 + 6, -e.h / 2 + 6, e.w - 12, e.h - 12);
-    ctx.fillStyle = '#ffba4d';
-    ctx.fillRect(-3, -e.h / 2 + 4, 6, 10);
+    
+    // Toilet bowl (white/cream colored, rounded)
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.ellipse(0, e.h * 0.15, e.w / 2, e.h * 0.4, 0, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Toilet bowl outline
+    ctx.strokeStyle = '#cccccc';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    
+    // Toilet lid (on top, slightly rounded)
+    ctx.fillStyle = '#f0f0f0';
+    ctx.beginPath();
+    ctx.ellipse(0, -e.h / 2 + e.h * 0.1, e.w / 2 * 0.9, e.h * 0.15, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#cccccc';
+    ctx.stroke();
+    
+    // Face/Head (Skibidi style - head popping out)
+    const headSize = Math.min(e.w * 0.4, e.h * 0.35);
+    const headY = -e.h / 2 - headSize * 0.3;
+    
+    // Head base (flesh colored)
+    ctx.fillStyle = '#ffdbac';
+    ctx.beginPath();
+    ctx.arc(0, headY, headSize / 2, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Head outline
+    ctx.strokeStyle = '#d4a574';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    
+    // Eyes (two circular eyes)
+    ctx.fillStyle = '#000000';
+    const eyeSize = headSize * 0.15;
+    ctx.beginPath();
+    ctx.arc(-headSize * 0.25, headY - headSize * 0.1, eyeSize, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(headSize * 0.25, headY - headSize * 0.1, eyeSize, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Mouth (wide smile)
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(0, headY + headSize * 0.15, headSize * 0.3, 0, Math.PI);
+    ctx.stroke();
+    
+    // Toilet seat (inside the bowl, darker)
+    ctx.fillStyle = '#e8e8e8';
+    ctx.beginPath();
+    ctx.ellipse(0, e.h * 0.15, e.w / 2 * 0.7, e.h * 0.25, 0, 0, Math.PI * 2);
+    ctx.fill();
+    
     ctx.restore();
   }
 }
