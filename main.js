@@ -314,12 +314,40 @@ function drawStars() {
 function drawPlayer() {
   ctx.save();
   ctx.translate(player.x, player.y);
-  ctx.fillStyle = '#37d6ff';
+  
+  // X-wing body (central fuselage)
+  ctx.fillStyle = '#ffffff';
   ctx.fillRect(-player.w / 2, -player.h / 2, player.w, player.h);
-  ctx.fillStyle = '#0b0f1f';
-  ctx.fillRect(-player.w / 2 + 6, -player.h / 2 + 6, player.w - 12, player.h - 12);
+  
+  // Cockpit window
   ctx.fillStyle = '#37d6ff';
-  ctx.fillRect(-4, -player.h / 2 - 10, 8, 12);
+  ctx.fillRect(-player.w / 2 + 4, -player.h / 2 + 4, player.w - 8, player.h * 0.4);
+  
+  // X-wing wings (top and bottom)
+  const wingLength = player.w * 0.6;
+  const wingWidth = 4;
+  
+  // Top left wing
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(-player.w / 2 - wingLength, -player.h / 2 - wingWidth, wingLength, wingWidth);
+  // Top right wing
+  ctx.fillRect(player.w / 2, -player.h / 2 - wingWidth, wingLength, wingWidth);
+  // Bottom left wing
+  ctx.fillRect(-player.w / 2 - wingLength, player.h / 2, wingLength, wingWidth);
+  // Bottom right wing
+  ctx.fillRect(player.w / 2, player.h / 2, wingLength, wingWidth);
+  
+  // Wing details (red stripes)
+  ctx.fillStyle = '#ff5b4d';
+  ctx.fillRect(-player.w / 2 - wingLength * 0.7, -player.h / 2 - wingWidth, wingLength * 0.3, wingWidth);
+  ctx.fillRect(player.w / 2 + wingLength * 0.4, -player.h / 2 - wingWidth, wingLength * 0.3, wingWidth);
+  ctx.fillRect(-player.w / 2 - wingLength * 0.7, player.h / 2, wingLength * 0.3, wingWidth);
+  ctx.fillRect(player.w / 2 + wingLength * 0.4, player.h / 2, wingLength * 0.3, wingWidth);
+  
+  // Engine glow
+  ctx.fillStyle = '#37d6ff';
+  ctx.fillRect(-player.w / 2 + 2, player.h / 2, player.w - 4, 6);
+  
   ctx.restore();
 }
 
@@ -335,62 +363,91 @@ function drawEnemies() {
     ctx.save();
     ctx.translate(e.x, e.y);
     
-    // Toilet bowl (white/cream colored, rounded)
-    ctx.fillStyle = '#ffffff';
+    // TIE Fighter central pod (hexagonal/octagonal shape)
+    ctx.fillStyle = '#333333';
     ctx.beginPath();
-    ctx.ellipse(0, e.h * 0.15, e.w / 2, e.h * 0.4, 0, 0, Math.PI * 2);
+    const sides = 8;
+    const radius = Math.min(e.w, e.h) * 0.4;
+    for (let i = 0; i < sides; i++) {
+      const angle = (Math.PI * 2 * i) / sides;
+      const x = Math.cos(angle) * radius;
+      const y = Math.sin(angle) * radius;
+      if (i === 0) {
+        ctx.moveTo(x, y);
+      } else {
+        ctx.lineTo(x, y);
+      }
+    }
+    ctx.closePath();
     ctx.fill();
     
-    // Toilet bowl outline
-    ctx.strokeStyle = '#cccccc';
-    ctx.lineWidth = 2;
-    ctx.stroke();
-    
-    // Toilet lid (on top, slightly rounded)
-    ctx.fillStyle = '#f0f0f0';
-    ctx.beginPath();
-    ctx.ellipse(0, -e.h / 2 + e.h * 0.1, e.w / 2 * 0.9, e.h * 0.15, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = '#cccccc';
-    ctx.stroke();
-    
-    // Face/Head (Skibidi style - head popping out)
-    const headSize = Math.min(e.w * 0.4, e.h * 0.35);
-    const headY = -e.h / 2 - headSize * 0.3;
-    
-    // Head base (flesh colored)
-    ctx.fillStyle = '#ffdbac';
-    ctx.beginPath();
-    ctx.arc(0, headY, headSize / 2, 0, Math.PI * 2);
-    ctx.fill();
-    
-    // Head outline
-    ctx.strokeStyle = '#d4a574';
-    ctx.lineWidth = 2;
-    ctx.stroke();
-    
-    // Eyes (two circular eyes)
+    // Central pod window (dark)
     ctx.fillStyle = '#000000';
-    const eyeSize = headSize * 0.15;
     ctx.beginPath();
-    ctx.arc(-headSize * 0.25, headY - headSize * 0.1, eyeSize, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.arc(headSize * 0.25, headY - headSize * 0.1, eyeSize, 0, Math.PI * 2);
+    const innerRadius = radius * 0.6;
+    for (let i = 0; i < sides; i++) {
+      const angle = (Math.PI * 2 * i) / sides;
+      const x = Math.cos(angle) * innerRadius;
+      const y = Math.sin(angle) * innerRadius;
+      if (i === 0) {
+        ctx.moveTo(x, y);
+      } else {
+        ctx.lineTo(x, y);
+      }
+    }
+    ctx.closePath();
     ctx.fill();
     
-    // Mouth (wide smile)
-    ctx.strokeStyle = '#000000';
+    // TIE Fighter solar panel wings (left and right)
+    const panelWidth = e.w * 0.35;
+    const panelHeight = e.h * 0.7;
+    const panelOffset = e.w * 0.5;
+    
+    // Left solar panel
+    ctx.fillStyle = '#222222';
+    ctx.fillRect(-panelOffset - panelWidth, -panelHeight / 2, panelWidth, panelHeight);
+    ctx.strokeStyle = '#444444';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(-panelOffset - panelWidth, -panelHeight / 2, panelWidth, panelHeight);
+    
+    // Left panel details (grid lines)
+    ctx.strokeStyle = '#555555';
+    ctx.lineWidth = 1;
+    for (let i = 1; i < 3; i++) {
+      const y = -panelHeight / 2 + (panelHeight / 4) * i;
+      ctx.beginPath();
+      ctx.moveTo(-panelOffset - panelWidth, y);
+      ctx.lineTo(-panelOffset, y);
+      ctx.stroke();
+    }
+    
+    // Right solar panel
+    ctx.fillStyle = '#222222';
+    ctx.fillRect(panelOffset, -panelHeight / 2, panelWidth, panelHeight);
+    ctx.strokeStyle = '#444444';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(panelOffset, -panelHeight / 2, panelWidth, panelHeight);
+    
+    // Right panel details (grid lines)
+    ctx.strokeStyle = '#555555';
+    ctx.lineWidth = 1;
+    for (let i = 1; i < 3; i++) {
+      const y = -panelHeight / 2 + (panelHeight / 4) * i;
+      ctx.beginPath();
+      ctx.moveTo(panelOffset, y);
+      ctx.lineTo(panelOffset + panelWidth, y);
+      ctx.stroke();
+    }
+    
+    // Connecting struts
+    ctx.strokeStyle = '#444444';
     ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.arc(0, headY + headSize * 0.15, headSize * 0.3, 0, Math.PI);
+    ctx.moveTo(-radius * 0.7, 0);
+    ctx.lineTo(-panelOffset, 0);
+    ctx.moveTo(radius * 0.7, 0);
+    ctx.lineTo(panelOffset, 0);
     ctx.stroke();
-    
-    // Toilet seat (inside the bowl, darker)
-    ctx.fillStyle = '#e8e8e8';
-    ctx.beginPath();
-    ctx.ellipse(0, e.h * 0.15, e.w / 2 * 0.7, e.h * 0.25, 0, 0, Math.PI * 2);
-    ctx.fill();
     
     ctx.restore();
   }
