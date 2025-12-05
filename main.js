@@ -9,6 +9,17 @@ const startBtn = document.getElementById('start-btn');
 const scoreEl = document.getElementById('score');
 const waveEl = document.getElementById('wave');
 const livesEl = document.getElementById('lives');
+const highScoreEl = document.getElementById('high-score');
+
+// Load high score from localStorage
+function getHighScore() {
+  const saved = localStorage.getItem('retroGameHighScore');
+  return saved ? parseInt(saved, 10) : 0;
+}
+
+function saveHighScore(score) {
+  localStorage.setItem('retroGameHighScore', score.toString());
+}
 
 const state = {
   running: false,
@@ -16,6 +27,7 @@ const state = {
   lastTime: 0,
   score: 0,
   wave: 1,
+  highScore: getHighScore(),
 };
 
 const player = {
@@ -55,6 +67,7 @@ function resetGame() {
   state.lastTime = performance.now();
   state.score = 0;
   state.wave = 1;
+  state.highScore = getHighScore(); // Refresh high score from storage
   player.x = canvas.width / 2;
   player.y = canvas.height - 90;
   player.lives = 3;
@@ -79,7 +92,11 @@ function startGame() {
 function gameOver() {
   state.running = false;
   state.gameOver = true;
-  showOverlay('Game Over', `Score: ${state.score}. Press Enter or click Start to try again.`);
+  const isNewHighScore = state.score >= state.highScore;
+  const message = isNewHighScore
+    ? `New High Score: ${state.score}! 🎉\nPress Enter or click Start to try again.`
+    : `Score: ${state.score}\nHigh Score: ${state.highScore}\nPress Enter or click Start to try again.`;
+  showOverlay('Game Over', message);
 }
 
 function showOverlay(title, message) {
@@ -96,6 +113,7 @@ function updateHud() {
   scoreEl.textContent = state.score;
   waveEl.textContent = state.wave;
   livesEl.textContent = player.lives;
+  highScoreEl.textContent = state.highScore;
 }
 
 function loop(timestamp) {
@@ -175,16 +193,18 @@ function updateEnemies(dt) {
 function spawnEnemy() {
   const baseSpeed = 80 + state.wave * 8;
   const type = Math.random();
-  const w = type > 0.7 ? 48 : 36;
-  const h = type > 0.7 ? 34 : 26;
+  const isLarge = type > 0.7;
+  const w = isLarge ? 48 : 36;
+  const h = isLarge ? 34 : 26;
   enemies.push({
     x: 60 + Math.random() * (canvas.width - 120),
     y: -h,
     w,
     h,
     speed: baseSpeed + Math.random() * 60,
-    hp: type > 0.7 ? 2 : 1,
+    hp: isLarge ? 2 : 1,
     phase: Math.random() * Math.PI * 2,
+    points: isLarge ? 25 : 10, // Larger enemies worth more points
   });
 }
 
@@ -220,7 +240,12 @@ function checkCollisions() {
         spawnHitParticles(e.x, e.y, '#ffea61');
         if (e.hp <= 0) {
           enemies.splice(i, 1);
-          state.score += 10;
+          state.score += e.points || 10;
+          // Update high score if needed
+          if (state.score > state.highScore) {
+            state.highScore = state.score;
+            saveHighScore(state.highScore);
+          }
           spawnHitParticles(e.x, e.y, '#ff5b4d', 14);
         }
         break;
