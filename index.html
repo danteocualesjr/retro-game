@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Retro Star Defender</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="frame">
+    <header class="top-bar">
+      <div class="title">Retro Star Defender</div>
+      <div class="hud">
+        <span id="score-label">Score: <strong id="score">0</strong></span>
+        <span id="wave-label">Wave: <strong id="wave">1</strong></span>
+        <span id="lives-label">Lives: <strong id="lives">3</strong></span>
+      </div>
+    </header>
+
+    <section class="playfield">
+      <canvas id="game" width="900" height="600" aria-label="Game canvas"></canvas>
+      <div id="overlay" class="overlay hidden" role="status" aria-live="polite">
+        <div class="panel">
+          <h1 id="overlay-title">Retro Star Defender</h1>
+          <p id="overlay-message">Move with Arrow Keys or WASD. Shoot with Space. Press Enter to start.</p>
+          <button id="start-btn" type="button">Start</button>
+        </div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <div class="controls">
+        <span>Move: Arrow Keys / WASD</span>
+        <span>Shoot: Space</span>
+        <span>Restart: Enter</span>
+      </div>
+      <div class="credit">Built for you &middot; Pure HTML + JS Canvas</div>
+    </footer>
+  </main>
+
+  <script src="main.js"></script>
+</body>
+</html>
+
