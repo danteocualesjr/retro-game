@@ -35,6 +35,7 @@ const state = {
 };
 
 const player = {
+  
   x: canvas.width / 2,
   y: canvas.height - 90,
   w: 36,
