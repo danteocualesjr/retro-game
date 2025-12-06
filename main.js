@@ -16,7 +16,7 @@ function getHighScore() {
 
   const saved = localStorage.getItem('retroGameHighScore');
   return saved ? parseInt(saved, 10) : 0;
-  
+
 }
 
 function saveHighScore(score) {
@@ -24,6 +24,7 @@ function saveHighScore(score) {
 }
 
 const state = {
+  
   running: false,
   gameOver: false,
   lastTime: 0,
