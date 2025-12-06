@@ -35,7 +35,7 @@ const state = {
 };
 
 const player = {
-  
+
   x: canvas.width / 2,
   y: canvas.height - 90,
   w: 36,
@@ -43,6 +43,7 @@ const player = {
   speed: 320,
   cooldown: 0,
   lives: 3,
+  
 };
 
 const inputs = {
