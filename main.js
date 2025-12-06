@@ -47,12 +47,13 @@ const player = {
 };
 
 const inputs = {
-  
+
   left: false,
   right: false,
   up: false,
   down: false,
   shoot: false,
+  
 };
 
 const bullets = [];
