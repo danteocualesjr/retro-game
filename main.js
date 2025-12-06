@@ -13,6 +13,7 @@ const highScoreEl = document.getElementById('high-score');
 
 // Load high score from localStorage
 function getHighScore() {
+  
   const saved = localStorage.getItem('retroGameHighScore');
   return saved ? parseInt(saved, 10) : 0;
 }
