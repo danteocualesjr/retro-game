@@ -43,10 +43,11 @@ const player = {
   speed: 320,
   cooldown: 0,
   lives: 3,
-  
+
 };
 
 const inputs = {
+  
   left: false,
   right: false,
   up: false,
