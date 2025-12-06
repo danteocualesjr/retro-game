@@ -24,13 +24,14 @@ function saveHighScore(score) {
 }
 
 const state = {
-  
+
   running: false,
   gameOver: false,
   lastTime: 0,
   score: 0,
   wave: 1,
   highScore: getHighScore(),
+  
 };
 
 const player = {
