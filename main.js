@@ -66,13 +66,14 @@ const stars = new Array(90).fill(0).map(() => ({
   y: Math.random() * canvas.height,
   speed: 40 + Math.random() * 90,
   size: 1 + Math.random() * 2,
-  
+
 }));
 
 let spawnTimer = 0;
 let spawnInterval = 1.35;
 
 function resetGame() {
+  
   state.running = false;
   state.gameOver = false;
   state.lastTime = performance.now();
