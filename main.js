@@ -73,7 +73,7 @@ let spawnTimer = 0;
 let spawnInterval = 1.35;
 
 function resetGame() {
-  
+
   state.running = false;
   state.gameOver = false;
   state.lastTime = performance.now();
@@ -91,6 +91,7 @@ function resetGame() {
   particles.length = 0;
   updateHud();
   showOverlay('Retro Star Defender', 'Move with Arrow Keys or WASD. Shoot with Space. Press Enter or click Start to play.');
+
 }
 
 function startGame() {
