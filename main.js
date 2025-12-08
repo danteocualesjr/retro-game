@@ -95,12 +95,13 @@ function resetGame() {
 }
 
 function startGame() {
-  
+
   state.running = true;
   state.gameOver = false;
   hideOverlay();
   state.lastTime = performance.now();
   requestAnimationFrame(loop);
+  
 }
 
 function gameOver() {
