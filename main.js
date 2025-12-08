@@ -105,7 +105,7 @@ function startGame() {
 }
 
 function gameOver() {
-  
+
   state.running = false;
   state.gameOver = true;
   const isNewHighScore = state.score > state.highScore;
@@ -113,6 +113,7 @@ function gameOver() {
     ? `New High Score: ${state.score}! 🎉\nPress Enter or click Start to try again.`
     : `Score: ${state.score}\nHigh Score: ${state.highScore}\nPress Enter or click Start to try again.`;
   showOverlay('Game Over', message);
+  
 }
 
 function showOverlay(title, message) {
