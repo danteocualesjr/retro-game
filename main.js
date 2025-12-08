@@ -95,6 +95,7 @@ function resetGame() {
 }
 
 function startGame() {
+  
   state.running = true;
   state.gameOver = false;
   hideOverlay();
