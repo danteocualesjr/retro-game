@@ -101,10 +101,11 @@ function startGame() {
   hideOverlay();
   state.lastTime = performance.now();
   requestAnimationFrame(loop);
-  
+
 }
 
 function gameOver() {
+  
   state.running = false;
   state.gameOver = true;
   const isNewHighScore = state.score > state.highScore;
