@@ -134,7 +134,7 @@ function updateHud() {
   waveEl.textContent = state.wave;
   
   // Render hearts for lives
-  
+
   const maxLives = 3;
   let heartsHTML = '';
   for (let i = 0; i < maxLives; i++) {
@@ -144,6 +144,7 @@ function updateHud() {
       heartsHTML += '<span class="heart empty">♡</span>';
     }
   }
+  
   livesEl.innerHTML = heartsHTML;
   
   highScoreEl.textContent = state.highScore;
