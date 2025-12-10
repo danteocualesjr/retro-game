@@ -117,6 +117,7 @@ function gameOver() {
 }
 
 function showOverlay(title, message) {
+  
   overlayTitle.textContent = title;
   overlayMessage.textContent = message;
   overlay.classList.remove('hidden');
