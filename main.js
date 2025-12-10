@@ -144,13 +144,14 @@ function updateHud() {
       heartsHTML += '<span class="heart empty">♡</span>';
     }
   }
-  
+
   livesEl.innerHTML = heartsHTML;
   
   highScoreEl.textContent = state.highScore;
 }
 
 function loop(timestamp) {
+  
   if (!state.running) return;
   const dt = Math.min((timestamp - state.lastTime) / 1000, 0.033);
   state.lastTime = timestamp;
