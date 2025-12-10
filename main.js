@@ -151,7 +151,7 @@ function updateHud() {
 }
 
 function loop(timestamp) {
-  
+
   if (!state.running) return;
   const dt = Math.min((timestamp - state.lastTime) / 1000, 0.033);
   state.lastTime = timestamp;
@@ -159,6 +159,7 @@ function loop(timestamp) {
   update(dt);
   draw();
   requestAnimationFrame(loop);
+  
 }
 
 function update(dt) {
