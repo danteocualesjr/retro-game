@@ -134,6 +134,7 @@ function updateHud() {
   waveEl.textContent = state.wave;
   
   // Render hearts for lives
+  
   const maxLives = 3;
   let heartsHTML = '';
   for (let i = 0; i < maxLives; i++) {
