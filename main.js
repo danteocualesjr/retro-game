@@ -121,7 +121,7 @@ function showOverlay(title, message) {
   overlayTitle.textContent = title;
   overlayMessage.textContent = message;
   overlay.classList.remove('hidden');
-  
+
 }
 
 function hideOverlay() {
@@ -129,6 +129,7 @@ function hideOverlay() {
 }
 
 function updateHud() {
+  
   scoreEl.textContent = state.score;
   waveEl.textContent = state.wave;
   
