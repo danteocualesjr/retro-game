@@ -163,6 +163,7 @@ function loop(timestamp) {
 }
 
 function update(dt) {
+  
   updateStars(dt);
   handleInput(dt);
   updateBullets(dt);
