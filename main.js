@@ -163,7 +163,7 @@ function loop(timestamp) {
 }
 
 function update(dt) {
-  
+
   updateStars(dt);
   handleInput(dt);
   updateBullets(dt);
@@ -172,6 +172,7 @@ function update(dt) {
   checkCollisions();
   maybeIncreaseWave();
   updateHud();
+  
 }
 
 function handleInput(dt) {
