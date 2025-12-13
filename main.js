@@ -176,6 +176,7 @@ function update(dt) {
 }
 
 function handleInput(dt) {
+  
   const dirX = (inputs.left ? -1 : 0) + (inputs.right ? 1 : 0);
   const dirY = (inputs.up ? -1 : 0) + (inputs.down ? 1 : 0);
 
