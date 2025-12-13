@@ -176,11 +176,12 @@ function update(dt) {
 }
 
 function handleInput(dt) {
-  
+
   const dirX = (inputs.left ? -1 : 0) + (inputs.right ? 1 : 0);
   const dirY = (inputs.up ? -1 : 0) + (inputs.down ? 1 : 0);
 
   player.x += dirX * player.speed * dt;
+  
   player.y += dirY * player.speed * dt;
   player.x = clamp(player.x, player.w / 2, canvas.width - player.w / 2);
   player.y = clamp(player.y, player.h / 2, canvas.height - player.h / 2);
