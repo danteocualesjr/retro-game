@@ -446,14 +446,21 @@ function updateBullets(dt) {
 
 function updateEnemies(dt) {
   // Spawn boss when enough enemies are killed for current level
-  const enemiesNeededForBoss = 15 + state.level * 5;
-  if (!state.bossSpawned && state.enemiesKilled >= enemiesNeededForBoss && enemies.length === 0) {
+  // Each level requires different number of enemies before boss appears
+  const enemiesNeededForBoss = [15, 20, 25, 30, 35][state.level - 1] || 35;
+  
+  // Check if we should spawn boss (enough enemies killed AND no regular enemies left)
+  const hasBoss = enemies.some(e => e.isBoss);
+  const hasRegularEnemies = enemies.some(e => !e.isBoss);
+  
+  if (!state.bossSpawned && state.enemiesKilled >= enemiesNeededForBoss && !hasRegularEnemies && !hasBoss) {
     spawnBoss();
   }
   
-  // Spawn regular enemies if boss not spawned or boss is alive
-  const hasBoss = enemies.some(e => e.isBoss);
-  if (!hasBoss || (hasBoss && enemies.length < 2)) {
+  // Spawn regular enemies only if:
+  // 1. Boss hasn't spawned yet, OR
+  // 2. Boss is alive but we want some regular enemies too (only in later levels)
+  if (!state.bossSpawned || (hasBoss && state.level >= 4 && enemies.length < 3)) {
     spawnTimer -= dt;
     if (spawnTimer <= 0) {
       spawnEnemy();
@@ -479,19 +486,62 @@ function updateEnemies(dt) {
   }
 }
 
-// Enemy types: 0 = TIE Fighter, 1 = TIE Interceptor, 2 = TIE Bomber, 3 = Boss
+// Enemy types: 0 = TIE Fighter, 1 = TIE Interceptor, 2 = TIE Bomber, 3 = TIE Advanced, 4 = TIE Defender, 5 = Boss
 function spawnEnemy() {
   const baseSpeed = 80 + state.wave * 8 + (state.level - 1) * 10;
   const rand = Math.random();
   
-  // Determine enemy type based on level and random chance
-  let enemyType = 0; // Default: TIE Fighter
-  if (rand < 0.5) {
-    enemyType = 0; // TIE Fighter (50%)
-  } else if (rand < 0.75 && state.level >= 2) {
-    enemyType = 1; // TIE Interceptor (25% from level 2+)
-  } else if (rand < 0.9 && state.level >= 3) {
-    enemyType = 2; // TIE Bomber (15% from level 3+)
+  // Level-specific enemy composition
+  let enemyType = 0;
+  let typeChance = rand;
+  
+  switch (state.level) {
+    case 1:
+      // Level 1: Only TIE Fighters
+      enemyType = 0;
+      break;
+    case 2:
+      // Level 2: TIE Fighters (60%) + TIE Interceptors (40%)
+      if (typeChance < 0.6) {
+        enemyType = 0; // TIE Fighter
+      } else {
+        enemyType = 1; // TIE Interceptor
+      }
+      break;
+    case 3:
+      // Level 3: TIE Fighters (40%) + TIE Interceptors (30%) + TIE Bombers (30%)
+      if (typeChance < 0.4) {
+        enemyType = 0; // TIE Fighter
+      } else if (typeChance < 0.7) {
+        enemyType = 1; // TIE Interceptor
+      } else {
+        enemyType = 2; // TIE Bomber
+      }
+      break;
+    case 4:
+      // Level 4: Mix of all types + TIE Advanced
+      if (typeChance < 0.3) {
+        enemyType = 0; // TIE Fighter
+      } else if (typeChance < 0.5) {
+        enemyType = 1; // TIE Interceptor
+      } else if (typeChance < 0.7) {
+        enemyType = 2; // TIE Bomber
+      } else {
+        enemyType = 3; // TIE Advanced
+      }
+      break;
+    case 5:
+      // Level 5: Elite enemies - TIE Advanced and TIE Defender
+      if (typeChance < 0.4) {
+        enemyType = 3; // TIE Advanced
+      } else if (typeChance < 0.7) {
+        enemyType = 2; // TIE Bomber
+      } else {
+        enemyType = 4; // TIE Defender
+      }
+      break;
+    default:
+      enemyType = 0;
   }
   
   let w, h, hp, points, speed;
@@ -517,6 +567,20 @@ function spawnEnemy() {
       hp = 3;
       points = 30;
       speed = baseSpeed * 0.7 + Math.random() * 40;
+      break;
+    case 3: // TIE Advanced (balanced elite)
+      w = 40;
+      h = 30;
+      hp = 2;
+      points = 25;
+      speed = baseSpeed * 1.1 + Math.random() * 70;
+      break;
+    case 4: // TIE Defender (fast and tough)
+      w = 44;
+      h = 32;
+      hp = 4;
+      points = 50;
+      speed = baseSpeed * 1.2 + Math.random() * 90;
       break;
   }
   
@@ -762,6 +826,12 @@ function drawEnemies() {
         case 2:
           drawTIEBomber(e);
           break;
+        case 3:
+          drawTIEAdvanced(e);
+          break;
+        case 4:
+          drawTIEDefender(e);
+          break;
         default:
           drawTIEFighter(e);
       }
@@ -971,6 +1041,183 @@ function drawTIEBomber(e) {
   ctx.fillStyle = '#ff5b4d';
   ctx.fillRect(-panelOffset - panelWidth + 4, panelHeight / 2 - 8, 6, 6);
   ctx.fillRect(panelOffset + panelWidth - 10, panelHeight / 2 - 8, 6, 6);
+}
+
+function drawTIEAdvanced(e) {
+  // TIE Advanced - Elite version with solar panels and enhanced design
+  ctx.fillStyle = '#555555';
+  ctx.beginPath();
+  const sides = 8;
+  const radius = Math.min(e.w, e.h) * 0.45;
+  for (let i = 0; i < sides; i++) {
+    const angle = (Math.PI * 2 * i) / sides;
+    const x = Math.cos(angle) * radius;
+    const y = Math.sin(angle) * radius;
+    if (i === 0) {
+      ctx.moveTo(x, y);
+    } else {
+      ctx.lineTo(x, y);
+    }
+  }
+  ctx.closePath();
+  ctx.fill();
+  
+  // Enhanced window with glow
+  ctx.fillStyle = '#000000';
+  ctx.beginPath();
+  const innerRadius = radius * 0.55;
+  for (let i = 0; i < sides; i++) {
+    const angle = (Math.PI * 2 * i) / sides;
+    const x = Math.cos(angle) * innerRadius;
+    const y = Math.sin(angle) * innerRadius;
+    if (i === 0) {
+      ctx.moveTo(x, y);
+    } else {
+      ctx.lineTo(x, y);
+    }
+  }
+  ctx.closePath();
+  ctx.fill();
+  
+  // Glowing center
+  ctx.fillStyle = '#ff5b4d';
+  ctx.globalAlpha = 0.6;
+  ctx.beginPath();
+  ctx.arc(0, 0, innerRadius * 0.5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.globalAlpha = 1;
+  
+  // Solar panels with enhanced design
+  const panelWidth = e.w * 0.38;
+  const panelHeight = e.h * 0.75;
+  const panelOffset = e.w * 0.52;
+  
+  // Left panel
+  ctx.fillStyle = '#333333';
+  ctx.fillRect(-panelOffset - panelWidth, -panelHeight / 2, panelWidth, panelHeight);
+  ctx.strokeStyle = '#666666';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(-panelOffset - panelWidth, -panelHeight / 2, panelWidth, panelHeight);
+  
+  // Right panel
+  ctx.fillRect(panelOffset, -panelHeight / 2, panelWidth, panelHeight);
+  ctx.strokeRect(panelOffset, -panelHeight / 2, panelWidth, panelHeight);
+  
+  // Panel grid pattern
+  ctx.strokeStyle = '#555555';
+  ctx.lineWidth = 1;
+  for (let i = 1; i < 4; i++) {
+    const y = -panelHeight / 2 + (panelHeight / 5) * i;
+    ctx.beginPath();
+    ctx.moveTo(-panelOffset - panelWidth, y);
+    ctx.lineTo(-panelOffset, y);
+    ctx.moveTo(panelOffset, y);
+    ctx.lineTo(panelOffset + panelWidth, y);
+    ctx.stroke();
+  }
+  
+  // Enhanced struts
+  ctx.strokeStyle = '#666666';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(-radius * 0.75, 0);
+  ctx.lineTo(-panelOffset, 0);
+  ctx.moveTo(radius * 0.75, 0);
+  ctx.lineTo(panelOffset, 0);
+  ctx.stroke();
+}
+
+function drawTIEDefender(e) {
+  // TIE Defender - Most advanced, with triple solar panels
+  ctx.fillStyle = '#666666';
+  ctx.beginPath();
+  const sides = 8;
+  const radius = Math.min(e.w, e.h) * 0.5;
+  for (let i = 0; i < sides; i++) {
+    const angle = (Math.PI * 2 * i) / sides;
+    const x = Math.cos(angle) * radius;
+    const y = Math.sin(angle) * radius;
+    if (i === 0) {
+      ctx.moveTo(x, y);
+    } else {
+      ctx.lineTo(x, y);
+    }
+  }
+  ctx.closePath();
+  ctx.fill();
+  
+  // Advanced window
+  ctx.fillStyle = '#000000';
+  ctx.beginPath();
+  const innerRadius = radius * 0.6;
+  for (let i = 0; i < sides; i++) {
+    const angle = (Math.PI * 2 * i) / sides;
+    const x = Math.cos(angle) * innerRadius;
+    const y = Math.sin(angle) * innerRadius;
+    if (i === 0) {
+      ctx.moveTo(x, y);
+    } else {
+      ctx.lineTo(x, y);
+    }
+  }
+  ctx.closePath();
+  ctx.fill();
+  
+  // Pulsing center glow
+  ctx.fillStyle = '#37d6ff';
+  ctx.globalAlpha = 0.7;
+  ctx.beginPath();
+  ctx.arc(0, 0, innerRadius * 0.6, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.globalAlpha = 1;
+  
+  // Triple solar panel design (left, center, right)
+  const panelWidth = e.w * 0.3;
+  const panelHeight = e.h * 0.8;
+  const panelOffset = e.w * 0.5;
+  
+  // Left panel
+  ctx.fillStyle = '#444444';
+  ctx.fillRect(-panelOffset - panelWidth, -panelHeight / 2, panelWidth, panelHeight);
+  ctx.strokeStyle = '#777777';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(-panelOffset - panelWidth, -panelHeight / 2, panelWidth, panelHeight);
+  
+  // Center panel (smaller, between struts)
+  const centerPanelWidth = e.w * 0.2;
+  ctx.fillStyle = '#444444';
+  ctx.fillRect(-centerPanelWidth / 2, -panelHeight / 2, centerPanelWidth, panelHeight);
+  ctx.strokeStyle = '#777777';
+  ctx.strokeRect(-centerPanelWidth / 2, -panelHeight / 2, centerPanelWidth, panelHeight);
+  
+  // Right panel
+  ctx.fillRect(panelOffset, -panelHeight / 2, panelWidth, panelHeight);
+  ctx.strokeRect(panelOffset, -panelHeight / 2, panelWidth, panelHeight);
+  
+  // Enhanced grid pattern
+  ctx.strokeStyle = '#666666';
+  ctx.lineWidth = 1;
+  for (let i = 1; i < 4; i++) {
+    const y = -panelHeight / 2 + (panelHeight / 5) * i;
+    ctx.beginPath();
+    ctx.moveTo(-panelOffset - panelWidth, y);
+    ctx.lineTo(-centerPanelWidth / 2, y);
+    ctx.moveTo(centerPanelWidth / 2, y);
+    ctx.lineTo(panelOffset + panelWidth, y);
+    ctx.stroke();
+  }
+  
+  // Triple struts
+  ctx.strokeStyle = '#777777';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(-radius * 0.8, 0);
+  ctx.lineTo(-panelOffset, 0);
+  ctx.moveTo(0, -radius * 0.3);
+  ctx.lineTo(0, -panelHeight / 2);
+  ctx.moveTo(radius * 0.8, 0);
+  ctx.lineTo(panelOffset, 0);
+  ctx.stroke();
 }
 
 function drawBoss(e) {
