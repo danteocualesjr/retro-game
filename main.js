@@ -616,7 +616,7 @@ function spawnBoss() {
     maxHp: bossHp,
     phase: 0,
     points: bossPoints,
-    type: 3, // Boss type
+    type: 5, // Boss type (separate from regular enemies)
     isBoss: true,
   });
 }
