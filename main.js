@@ -9,6 +9,7 @@ const soundToggleBtn = document.getElementById('sound-toggle');
 
 const scoreEl = document.getElementById('score');
 const waveEl = document.getElementById('wave');
+const levelEl = document.getElementById('level');
 const livesEl = document.getElementById('lives');
 const highScoreEl = document.getElementById('high-score');
 
@@ -221,7 +222,10 @@ const state = {
   lastTime: 0,
   score: 0,
   wave: 1,
+  level: 1,
   highScore: getHighScore(),
+  enemiesKilled: 0,
+  bossSpawned: false,
   
 };
 
@@ -270,6 +274,9 @@ function resetGame() {
   state.lastTime = performance.now();
   state.score = 0;
   state.wave = 1;
+  state.level = 1;
+  state.enemiesKilled = 0;
+  state.bossSpawned = false;
   state.highScore = getHighScore(); // Refresh high score from storage
   player.x = canvas.width / 2;
   player.y = canvas.height - 90;
@@ -331,6 +338,7 @@ function hideOverlay() {
 function updateHud() {
   
   scoreEl.textContent = state.score;
+  levelEl.textContent = state.level;
   waveEl.textContent = state.wave;
   
   // Render hearts for lives
@@ -410,37 +418,115 @@ function updateBullets(dt) {
 }
 
 function updateEnemies(dt) {
-  spawnTimer -= dt;
-  if (spawnTimer <= 0) {
-    spawnEnemy();
-    spawnTimer = Math.max(0.55, spawnInterval - state.wave * 0.05);
+  // Spawn boss when enough enemies are killed for current level
+  const enemiesNeededForBoss = 15 + state.level * 5;
+  if (!state.bossSpawned && state.enemiesKilled >= enemiesNeededForBoss && enemies.length === 0) {
+    spawnBoss();
+  }
+  
+  // Spawn regular enemies if boss not spawned or boss is alive
+  const hasBoss = enemies.some(e => e.isBoss);
+  if (!hasBoss || (hasBoss && enemies.length < 2)) {
+    spawnTimer -= dt;
+    if (spawnTimer <= 0) {
+      spawnEnemy();
+      spawnTimer = Math.max(0.55, spawnInterval - state.wave * 0.05);
+    }
   }
 
   for (let i = enemies.length - 1; i >= 0; i -= 1) {
     const e = enemies[i];
-    e.y += e.speed * dt;
-    e.x += Math.sin(performance.now() * 0.002 + e.phase) * 40 * dt;
+    
+    // Boss moves differently (slower, more deliberate)
+    if (e.isBoss) {
+      e.y += e.speed * dt;
+      e.x += Math.sin(performance.now() * 0.001 + e.phase) * 60 * dt;
+    } else {
+      e.y += e.speed * dt;
+      e.x += Math.sin(performance.now() * 0.002 + e.phase) * 40 * dt;
+    }
+    
     if (e.y - e.h > canvas.height + 20) {
       enemies.splice(i, 1);
     }
   }
 }
 
+// Enemy types: 0 = TIE Fighter, 1 = TIE Interceptor, 2 = TIE Bomber, 3 = Boss
 function spawnEnemy() {
-  const baseSpeed = 80 + state.wave * 8;
-  const type = Math.random();
-  const isLarge = type > 0.7;
-  const w = isLarge ? 48 : 36;
-  const h = isLarge ? 34 : 26;
+  const baseSpeed = 80 + state.wave * 8 + (state.level - 1) * 10;
+  const rand = Math.random();
+  
+  // Determine enemy type based on level and random chance
+  let enemyType = 0; // Default: TIE Fighter
+  if (rand < 0.5) {
+    enemyType = 0; // TIE Fighter (50%)
+  } else if (rand < 0.75 && state.level >= 2) {
+    enemyType = 1; // TIE Interceptor (25% from level 2+)
+  } else if (rand < 0.9 && state.level >= 3) {
+    enemyType = 2; // TIE Bomber (15% from level 3+)
+  }
+  
+  let w, h, hp, points, speed;
+  
+  switch (enemyType) {
+    case 0: // TIE Fighter
+      w = 36;
+      h = 26;
+      hp = 1;
+      points = 10;
+      speed = baseSpeed + Math.random() * 60;
+      break;
+    case 1: // TIE Interceptor (faster, more agile)
+      w = 32;
+      h = 24;
+      hp = 1;
+      points = 15;
+      speed = baseSpeed * 1.3 + Math.random() * 80;
+      break;
+    case 2: // TIE Bomber (slower, more HP)
+      w = 48;
+      h = 34;
+      hp = 3;
+      points = 30;
+      speed = baseSpeed * 0.7 + Math.random() * 40;
+      break;
+  }
+  
   enemies.push({
     x: 60 + Math.random() * (canvas.width - 120),
     y: -h,
     w,
     h,
-    speed: baseSpeed + Math.random() * 60,
-    hp: isLarge ? 2 : 1,
+    speed,
+    hp,
     phase: Math.random() * Math.PI * 2,
-    points: isLarge ? 25 : 10, // Larger enemies worth more points
+    points,
+    type: enemyType,
+    isBoss: false,
+  });
+}
+
+function spawnBoss() {
+  if (state.bossSpawned) return;
+  state.bossSpawned = true;
+  
+  const bossSize = 80 + state.level * 10;
+  const bossHp = 10 + state.level * 5;
+  const bossPoints = 100 * state.level;
+  
+  enemies.push({
+    x: canvas.width / 2,
+    y: -bossSize,
+    w: bossSize,
+    h: bossSize * 0.8,
+    speed: 60 + state.level * 5,
+    hp: bossHp,
+    maxHp: bossHp,
+    phase: 0,
+    points: bossPoints,
+    type: 3, // Boss type
+    isBoss: true,
   });
 }
 
@@ -475,14 +561,24 @@ function checkCollisions() {
         e.hp -= 1;
         spawnHitParticles(e.x, e.y, '#ffea61');
         if (e.hp <= 0) {
+          const wasBoss = e.isBoss;
           enemies.splice(i, 1);
           state.score += e.points || 10;
+          state.enemiesKilled += 1;
+          
           // Update high score if needed
           if (state.score > state.highScore) {
             state.highScore = state.score;
             saveHighScore(state.highScore);
           }
-          spawnHitParticles(e.x, e.y, '#ff5b4d', 14);
+          
+          spawnHitParticles(e.x, e.y, '#ff5b4d', wasBoss ? 30 : 14);
+          sounds.explosion(); // Play explosion sound
+          
+          // If boss was defeated, advance to next level
+          if (wasBoss) {
+            advanceLevel();
+          }
         }
         break;
       }
@@ -516,6 +612,35 @@ function maybeIncreaseWave() {
     state.wave = newWave;
     spawnInterval = Math.max(0.85, spawnInterval - 0.06);
   }
+}
+
+function advanceLevel() {
+  if (state.level >= 5) {
+    // Game complete!
+    showOverlay('Victory!', `You've completed all 5 levels! Final Score: ${state.score}. Press Enter to play again.`);
+    state.running = false;
+    return;
+  }
+  
+  state.level += 1;
+  state.enemiesKilled = 0;
+  state.bossSpawned = false;
+  state.wave = 1;
+  updateHud();
+  
+  // Show level transition message
+  const overlay = document.getElementById('overlay');
+  const overlayTitle = document.getElementById('overlay-title');
+  const overlayMessage = document.getElementById('overlay-message');
+  overlayTitle.textContent = `Level ${state.level}!`;
+  overlayMessage.textContent = `Prepare for battle! Boss incoming...`;
+  overlay.classList.remove('hidden');
+  
+  setTimeout(() => {
+    if (state.running) {
+      overlay.classList.add('hidden');
+    }
+  }, 2000);
 }
 
 function draw() {
