@@ -130,6 +130,33 @@ const sounds = {
 
     osc.start(audioCtx.currentTime);
     osc.stop(audioCtx.currentTime + 0.6);
+  },
+
+  // Boss defeat sound (more dramatic)
+  bossDefeat() {
+    if (!audioCtx || !soundEnabled) return;
+    const osc1 = audioCtx.createOscillator();
+    const osc2 = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    
+    osc1.connect(gain);
+    osc2.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    osc1.type = 'sine';
+    osc2.type = 'square';
+    osc1.frequency.setValueAtTime(400, audioCtx.currentTime);
+    osc1.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.5);
+    osc2.frequency.setValueAtTime(300, audioCtx.currentTime);
+    osc2.frequency.exponentialRampToValueAtTime(600, audioCtx.currentTime + 0.5);
+
+    gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+
+    osc1.start(audioCtx.currentTime);
+    osc2.start(audioCtx.currentTime);
+    osc1.stop(audioCtx.currentTime + 0.5);
+    osc2.stop(audioCtx.currentTime + 0.5);
   }
 };
 
@@ -573,11 +600,16 @@ function checkCollisions() {
           }
           
           spawnHitParticles(e.x, e.y, '#ff5b4d', wasBoss ? 30 : 14);
-          sounds.explosion(); // Play explosion sound
           
-          // If boss was defeated, advance to next level
+          // Play appropriate sound
           if (wasBoss) {
-            advanceLevel();
+            sounds.bossDefeat();
+            // Advance to next level after a short delay
+            setTimeout(() => {
+              if (state.running) advanceLevel();
+            }, 1000);
+          } else {
+            sounds.explosion();
           }
         }
         break;
@@ -713,93 +745,290 @@ function drawEnemies() {
     ctx.save();
     ctx.translate(e.x, e.y);
     
-    // TIE Fighter central pod (hexagonal/octagonal shape)
-    ctx.fillStyle = '#333333';
-    ctx.beginPath();
-    const sides = 8;
-    const radius = Math.min(e.w, e.h) * 0.4;
-    for (let i = 0; i < sides; i++) {
-      const angle = (Math.PI * 2 * i) / sides;
-      const x = Math.cos(angle) * radius;
-      const y = Math.sin(angle) * radius;
-      if (i === 0) {
-        ctx.moveTo(x, y);
-      } else {
-        ctx.lineTo(x, y);
+    const enemyType = e.type || 0;
+    const isBoss = e.isBoss || false;
+    
+    if (isBoss) {
+      // Boss: Large Star Destroyer-like ship
+      drawBoss(e);
+    } else {
+      switch (enemyType) {
+        case 0:
+          drawTIEFighter(e);
+          break;
+        case 1:
+          drawTIEInterceptor(e);
+          break;
+        case 2:
+          drawTIEBomber(e);
+          break;
+        default:
+          drawTIEFighter(e);
       }
     }
-    ctx.closePath();
-    ctx.fill();
-    
-    // Central pod window (dark)
-    ctx.fillStyle = '#000000';
-    ctx.beginPath();
-    const innerRadius = radius * 0.6;
-    for (let i = 0; i < sides; i++) {
-      const angle = (Math.PI * 2 * i) / sides;
-      const x = Math.cos(angle) * innerRadius;
-      const y = Math.sin(angle) * innerRadius;
-      if (i === 0) {
-        ctx.moveTo(x, y);
-      } else {
-        ctx.lineTo(x, y);
-      }
-    }
-    ctx.closePath();
-    ctx.fill();
-    
-    // TIE Fighter solar panel wings (left and right)
-    const panelWidth = e.w * 0.35;
-    const panelHeight = e.h * 0.7;
-    const panelOffset = e.w * 0.5;
-    
-    // Left solar panel
-    ctx.fillStyle = '#222222';
-    ctx.fillRect(-panelOffset - panelWidth, -panelHeight / 2, panelWidth, panelHeight);
-    ctx.strokeStyle = '#444444';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(-panelOffset - panelWidth, -panelHeight / 2, panelWidth, panelHeight);
-    
-    // Left panel details (grid lines)
-    ctx.strokeStyle = '#555555';
-    ctx.lineWidth = 1;
-    for (let i = 1; i < 3; i++) {
-      const y = -panelHeight / 2 + (panelHeight / 4) * i;
-      ctx.beginPath();
-      ctx.moveTo(-panelOffset - panelWidth, y);
-      ctx.lineTo(-panelOffset, y);
-      ctx.stroke();
-    }
-    
-    // Right solar panel
-    ctx.fillStyle = '#222222';
-    ctx.fillRect(panelOffset, -panelHeight / 2, panelWidth, panelHeight);
-    ctx.strokeStyle = '#444444';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(panelOffset, -panelHeight / 2, panelWidth, panelHeight);
-    
-    // Right panel details (grid lines)
-    ctx.strokeStyle = '#555555';
-    ctx.lineWidth = 1;
-    for (let i = 1; i < 3; i++) {
-      const y = -panelHeight / 2 + (panelHeight / 4) * i;
-      ctx.beginPath();
-      ctx.moveTo(panelOffset, y);
-      ctx.lineTo(panelOffset + panelWidth, y);
-      ctx.stroke();
-    }
-    
-    // Connecting struts
-    ctx.strokeStyle = '#444444';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(-radius * 0.7, 0);
-    ctx.lineTo(-panelOffset, 0);
-    ctx.moveTo(radius * 0.7, 0);
-    ctx.lineTo(panelOffset, 0);
-    ctx.stroke();
     
     ctx.restore();
+  }
+}
+
+function drawTIEFighter(e) {
+  // TIE Fighter central pod
+  ctx.fillStyle = '#333333';
+  ctx.beginPath();
+  const sides = 8;
+  const radius = Math.min(e.w, e.h) * 0.4;
+  for (let i = 0; i < sides; i++) {
+    const angle = (Math.PI * 2 * i) / sides;
+    const x = Math.cos(angle) * radius;
+    const y = Math.sin(angle) * radius;
+    if (i === 0) {
+      ctx.moveTo(x, y);
+    } else {
+      ctx.lineTo(x, y);
+    }
+  }
+  ctx.closePath();
+  ctx.fill();
+  
+  // Central pod window
+  ctx.fillStyle = '#000000';
+  ctx.beginPath();
+  const innerRadius = radius * 0.6;
+  for (let i = 0; i < sides; i++) {
+    const angle = (Math.PI * 2 * i) / sides;
+    const x = Math.cos(angle) * innerRadius;
+    const y = Math.sin(angle) * innerRadius;
+    if (i === 0) {
+      ctx.moveTo(x, y);
+    } else {
+      ctx.lineTo(x, y);
+    }
+  }
+  ctx.closePath();
+  ctx.fill();
+  
+  // Solar panel wings
+  const panelWidth = e.w * 0.35;
+  const panelHeight = e.h * 0.7;
+  const panelOffset = e.w * 0.5;
+  
+  // Left panel
+  ctx.fillStyle = '#222222';
+  ctx.fillRect(-panelOffset - panelWidth, -panelHeight / 2, panelWidth, panelHeight);
+  ctx.strokeStyle = '#444444';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(-panelOffset - panelWidth, -panelHeight / 2, panelWidth, panelHeight);
+  
+  // Right panel
+  ctx.fillRect(panelOffset, -panelHeight / 2, panelWidth, panelHeight);
+  ctx.strokeRect(panelOffset, -panelHeight / 2, panelWidth, panelHeight);
+  
+  // Connecting struts
+  ctx.strokeStyle = '#444444';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(-radius * 0.7, 0);
+  ctx.lineTo(-panelOffset, 0);
+  ctx.moveTo(radius * 0.7, 0);
+  ctx.lineTo(panelOffset, 0);
+  ctx.stroke();
+}
+
+function drawTIEInterceptor(e) {
+  // Similar to TIE Fighter but with angled wings
+  ctx.fillStyle = '#444444';
+  ctx.beginPath();
+  const sides = 8;
+  const radius = Math.min(e.w, e.h) * 0.4;
+  for (let i = 0; i < sides; i++) {
+    const angle = (Math.PI * 2 * i) / sides;
+    const x = Math.cos(angle) * radius;
+    const y = Math.sin(angle) * radius;
+    if (i === 0) {
+      ctx.moveTo(x, y);
+    } else {
+      ctx.lineTo(x, y);
+    }
+  }
+  ctx.closePath();
+  ctx.fill();
+  
+  ctx.fillStyle = '#000000';
+  ctx.beginPath();
+  const innerRadius = radius * 0.6;
+  for (let i = 0; i < sides; i++) {
+    const angle = (Math.PI * 2 * i) / sides;
+    const x = Math.cos(angle) * innerRadius;
+    const y = Math.sin(angle) * innerRadius;
+    if (i === 0) {
+      ctx.moveTo(x, y);
+    } else {
+      ctx.lineTo(x, y);
+    }
+  }
+  ctx.closePath();
+  ctx.fill();
+  
+  // Angled solar panels (diamond shape)
+  const panelSize = e.w * 0.4;
+  const panelOffset = e.w * 0.5;
+  
+  // Left panel (rotated)
+  ctx.save();
+  ctx.translate(-panelOffset - panelSize / 2, 0);
+  ctx.rotate(Math.PI / 4);
+  ctx.fillStyle = '#333333';
+  ctx.fillRect(-panelSize / 2, -panelSize / 2, panelSize, panelSize);
+  ctx.strokeStyle = '#555555';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(-panelSize / 2, -panelSize / 2, panelSize, panelSize);
+  ctx.restore();
+  
+  // Right panel (rotated)
+  ctx.save();
+  ctx.translate(panelOffset + panelSize / 2, 0);
+  ctx.rotate(Math.PI / 4);
+  ctx.fillStyle = '#333333';
+  ctx.fillRect(-panelSize / 2, -panelSize / 2, panelSize, panelSize);
+  ctx.strokeStyle = '#555555';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(-panelSize / 2, -panelSize / 2, panelSize, panelSize);
+  ctx.restore();
+  
+  // Struts
+  ctx.strokeStyle = '#444444';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(-radius * 0.7, 0);
+  ctx.lineTo(-panelOffset, 0);
+  ctx.moveTo(radius * 0.7, 0);
+  ctx.lineTo(panelOffset, 0);
+  ctx.stroke();
+}
+
+function drawTIEBomber(e) {
+  // Larger, bulkier TIE Bomber
+  ctx.fillStyle = '#222222';
+  ctx.beginPath();
+  const sides = 8;
+  const radius = Math.min(e.w, e.h) * 0.45;
+  for (let i = 0; i < sides; i++) {
+    const angle = (Math.PI * 2 * i) / sides;
+    const x = Math.cos(angle) * radius;
+    const y = Math.sin(angle) * radius;
+    if (i === 0) {
+      ctx.moveTo(x, y);
+    } else {
+      ctx.lineTo(x, y);
+    }
+  }
+  ctx.closePath();
+  ctx.fill();
+  
+  ctx.fillStyle = '#000000';
+  ctx.beginPath();
+  const innerRadius = radius * 0.5;
+  for (let i = 0; i < sides; i++) {
+    const angle = (Math.PI * 2 * i) / sides;
+    const x = Math.cos(angle) * innerRadius;
+    const y = Math.sin(angle) * innerRadius;
+    if (i === 0) {
+      ctx.moveTo(x, y);
+    } else {
+      ctx.lineTo(x, y);
+    }
+  }
+  ctx.closePath();
+  ctx.fill();
+  
+  // Larger solar panels
+  const panelWidth = e.w * 0.4;
+  const panelHeight = e.h * 0.8;
+  const panelOffset = e.w * 0.55;
+  
+  // Left panel
+  ctx.fillStyle = '#111111';
+  ctx.fillRect(-panelOffset - panelWidth, -panelHeight / 2, panelWidth, panelHeight);
+  ctx.strokeStyle = '#333333';
+  ctx.lineWidth = 3;
+  ctx.strokeRect(-panelOffset - panelWidth, -panelHeight / 2, panelWidth, panelHeight);
+  
+  // Right panel
+  ctx.fillRect(panelOffset, -panelHeight / 2, panelWidth, panelHeight);
+  ctx.strokeRect(panelOffset, -panelHeight / 2, panelWidth, panelHeight);
+  
+  // Thicker struts
+  ctx.strokeStyle = '#333333';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(-radius * 0.8, 0);
+  ctx.lineTo(-panelOffset, 0);
+  ctx.moveTo(radius * 0.8, 0);
+  ctx.lineTo(panelOffset, 0);
+  ctx.stroke();
+  
+  // Bomber details (bomb launchers)
+  ctx.fillStyle = '#ff5b4d';
+  ctx.fillRect(-panelOffset - panelWidth + 4, panelHeight / 2 - 8, 6, 6);
+  ctx.fillRect(panelOffset + panelWidth - 10, panelHeight / 2 - 8, 6, 6);
+}
+
+function drawBoss(e) {
+  // Large Star Destroyer-like boss ship
+  const width = e.w;
+  const height = e.h;
+  
+  // Main hull (triangular/wedge shape)
+  ctx.fillStyle = '#444444';
+  ctx.beginPath();
+  ctx.moveTo(0, -height / 2);
+  ctx.lineTo(-width / 2, height / 2);
+  ctx.lineTo(width / 2, height / 2);
+  ctx.closePath();
+  ctx.fill();
+  
+  // Hull outline
+  ctx.strokeStyle = '#666666';
+  ctx.lineWidth = 3;
+  ctx.stroke();
+  
+  // Bridge tower
+  ctx.fillStyle = '#555555';
+  const bridgeWidth = width * 0.3;
+  const bridgeHeight = height * 0.4;
+  ctx.fillRect(-bridgeWidth / 2, -height / 2 - bridgeHeight * 0.3, bridgeWidth, bridgeHeight);
+  ctx.strokeStyle = '#777777';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(-bridgeWidth / 2, -height / 2 - bridgeHeight * 0.3, bridgeWidth, bridgeHeight);
+  
+  // Bridge windows
+  ctx.fillStyle = '#ff5b4d';
+  for (let i = 0; i < 3; i++) {
+    ctx.fillRect(-bridgeWidth / 2 + 4 + i * (bridgeWidth / 4), -height / 2 - bridgeHeight * 0.2, 4, 6);
+  }
+  
+  // Engine glow
+  ctx.fillStyle = '#ff5b4d';
+  ctx.fillRect(-width * 0.3, height / 2 - 4, width * 0.6, 8);
+  
+  // HP bar for boss
+  if (e.maxHp) {
+    const barWidth = width;
+    const barHeight = 6;
+    const hpPercent = e.hp / e.maxHp;
+    
+    // Background
+    ctx.fillStyle = '#333333';
+    ctx.fillRect(-barWidth / 2, -height / 2 - 20, barWidth, barHeight);
+    
+    // HP bar
+    ctx.fillStyle = hpPercent > 0.5 ? '#00ff00' : hpPercent > 0.25 ? '#ffff00' : '#ff0000';
+    ctx.fillRect(-barWidth / 2, -height / 2 - 20, barWidth * hpPercent, barHeight);
+    
+    // Border
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(-barWidth / 2, -height / 2 - 20, barWidth, barHeight);
   }
 }
 
