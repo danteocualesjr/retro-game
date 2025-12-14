@@ -12,139 +12,186 @@ const livesEl = document.getElementById('lives');
 const highScoreEl = document.getElementById('high-score');
 
 // Audio Context and Sound System
-const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+let audioCtx = null;
+let musicOscillators = [];
+let musicPlaying = false;
+let musicInterval = null;
+
+// Initialize audio context (requires user interaction)
+function initAudio() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  return audioCtx;
+}
 
 const sounds = {
+  // Laser blaster sound (X-wing shooting)
   shoot() {
+    if (!audioCtx) return;
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
     osc.connect(gain);
     gain.connect(audioCtx.destination);
 
-    osc.frequency.setValueAtTime(600, audioCtx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + 0.1);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(400, audioCtx.currentTime + 0.08);
+
+    gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
+
+    osc.start(audioCtx.currentTime);
+    osc.stop(audioCtx.currentTime + 0.08);
+  },
+
+  // TIE Fighter explosion
+  explosion() {
+    if (!audioCtx) return;
+    const osc1 = audioCtx.createOscillator();
+    const osc2 = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    
+    osc1.connect(gain);
+    osc2.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    osc1.type = 'sawtooth';
+    osc2.type = 'square';
+    osc1.frequency.setValueAtTime(150, audioCtx.currentTime);
+    osc1.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.3);
+    osc2.frequency.setValueAtTime(200, audioCtx.currentTime);
+    osc2.frequency.exponentialRampToValueAtTime(60, audioCtx.currentTime + 0.3);
 
     gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
-
-    osc.start(audioCtx.currentTime);
-    osc.stop(audioCtx.currentTime + 0.1);
-  },
-
-  explosion() {
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    const noise = audioCtx.createBufferSource();
-    const noiseGain = audioCtx.createGain();
-
-    // Create noise buffer
-    const bufferSize = audioCtx.sampleRate * 0.3;
-    const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-    const data = buffer.getChannelData(0);
-    for (let i = 0; i < bufferSize; i++) {
-      data[i] = Math.random() * 2 - 1;
-    }
-    noise.buffer = buffer;
-
-    osc.connect(gain);
-    noise.connect(noiseGain);
-    gain.connect(audioCtx.destination);
-    noiseGain.connect(audioCtx.destination);
-
-    osc.frequency.setValueAtTime(200, audioCtx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.3);
-
-    gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
 
-    noiseGain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-    noiseGain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
-
-    osc.start(audioCtx.currentTime);
-    noise.start(audioCtx.currentTime);
-    osc.stop(audioCtx.currentTime + 0.3);
-    noise.stop(audioCtx.currentTime + 0.3);
+    osc1.start(audioCtx.currentTime);
+    osc2.start(audioCtx.currentTime);
+    osc1.stop(audioCtx.currentTime + 0.3);
+    osc2.stop(audioCtx.currentTime + 0.3);
   },
 
+  // Enemy hit sound
   hit() {
+    if (!audioCtx) return;
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
     osc.connect(gain);
     gain.connect(audioCtx.destination);
 
-    osc.frequency.setValueAtTime(400, audioCtx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.05);
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(150, audioCtx.currentTime + 0.05);
 
-    gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
+    gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
 
     osc.start(audioCtx.currentTime);
     osc.stop(audioCtx.currentTime + 0.05);
   },
 
+  // Player hit sound
   playerHit() {
+    if (!audioCtx) return;
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
     osc.connect(gain);
     gain.connect(audioCtx.destination);
 
-    osc.frequency.setValueAtTime(150, audioCtx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.2);
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(200, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(80, audioCtx.currentTime + 0.2);
 
-    gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
+    gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
 
     osc.start(audioCtx.currentTime);
     osc.stop(audioCtx.currentTime + 0.2);
   },
 
+  // Game over sound
   gameOver() {
+    if (!audioCtx) return;
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
     osc.connect(gain);
     gain.connect(audioCtx.destination);
 
-    osc.frequency.setValueAtTime(300, audioCtx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.5);
-
-    gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
-
-    osc.start(audioCtx.currentTime);
-    osc.stop(audioCtx.currentTime + 0.5);
-  },
-
-  waveComplete() {
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-
-    osc.frequency.setValueAtTime(400, audioCtx.currentTime);
-    osc.frequency.setValueAtTime(500, audioCtx.currentTime + 0.1);
-    osc.frequency.setValueAtTime(600, audioCtx.currentTime + 0.2);
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(200, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.6);
 
     gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
-    gain.gain.setValueAtTime(0.2, audioCtx.currentTime + 0.2);
-    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.6);
 
     osc.start(audioCtx.currentTime);
-    osc.stop(audioCtx.currentTime + 0.3);
+    osc.stop(audioCtx.currentTime + 0.6);
   }
 };
 
-// Background music
-let musicOscillators = [];
-let musicPlaying = false;
-
+// Background music - Star Wars style retro theme
 function startBackgroundMusic() {
-  if (musicPlaying) return;
+  if (musicPlaying || !audioCtx) return;
   musicPlaying = true;
-  playMusicLoop();
+  
+  const playNote = (freq, duration, delay = 0) => {
+    setTimeout(() => {
+      if (!musicPlaying || !state.running) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+
+      gain.gain.setValueAtTime(0, audioCtx.currentTime);
+      gain.gain.linearRampToValueAtTime(0.06, audioCtx.currentTime + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration * 0.8);
+      gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + duration);
+
+      osc.start(audioCtx.currentTime);
+      osc.stop(audioCtx.currentTime + duration);
+      musicOscillators.push(osc);
+    }, delay);
+  };
+
+  // Star Wars inspired melody pattern
+  const melody = [
+    { freq: 392, dur: 0.3 }, // G
+    { freq: 440, dur: 0.3 }, // A
+    { freq: 494, dur: 0.3 }, // B
+    { freq: 523, dur: 0.4 }, // C
+    { freq: 494, dur: 0.3 }, // B
+    { freq: 440, dur: 0.3 }, // A
+    { freq: 392, dur: 0.5 }, // G
+    { freq: 330, dur: 0.3 }, // E
+    { freq: 349, dur: 0.3 }, // F
+    { freq: 392, dur: 0.4 }, // G
+  ];
+
+  let currentTime = 0;
+  const playMelody = () => {
+    if (!musicPlaying || !state.running) return;
+    
+    melody.forEach((note, i) => {
+      playNote(note.freq, note.dur, currentTime + i * 350);
+    });
+    
+    currentTime += melody.length * 350;
+    musicInterval = setTimeout(playMelody, currentTime);
+  };
+
+  playMelody();
 }
 
 function stopBackgroundMusic() {
   musicPlaying = false;
+  if (musicInterval) {
+    clearTimeout(musicInterval);
+    musicInterval = null;
+  }
   musicOscillators.forEach(osc => {
     try {
       osc.stop();
@@ -153,39 +200,7 @@ function stopBackgroundMusic() {
   musicOscillators = [];
 }
 
-function playMusicLoop() {
-  if (!musicPlaying || !state.running) return;
-
-  const notes = [262, 330, 392, 330]; // C, E, G, E pattern
-  const noteIndex = Math.floor(audioCtx.currentTime * 2) % notes.length;
-  const frequency = notes[noteIndex];
-
-  const osc = audioCtx.createOscillator();
-  const gain = audioCtx.createGain();
-  osc.connect(gain);
-  gain.connect(audioCtx.destination);
-
-  osc.frequency.setValueAtTime(frequency, audioCtx.currentTime);
-  osc.type = 'square';
-
-  gain.gain.setValueAtTime(0, audioCtx.currentTime);
-  
-  gain.gain.linearRampToValueAtTime(0.08, audioCtx.currentTime + 0.01);
-  gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
-
-  osc.start(audioCtx.currentTime);
-  osc.stop(audioCtx.currentTime + 0.5);
-
-  musicOscillators.push(osc);
-
-  setTimeout(() => {
-    musicOscillators.shift();
-    playMusicLoop();
-  }, 500);
-}
-
 // Load high score from localStorage
-
 function getHighScore() {
 
   const saved = localStorage.getItem('retroGameHighScore');
@@ -337,7 +352,6 @@ function loop(timestamp) {
 }
 
 function update(dt) {
-
   updateStars(dt);
   handleInput(dt);
   updateBullets(dt);
@@ -346,16 +360,13 @@ function update(dt) {
   checkCollisions();
   maybeIncreaseWave();
   updateHud();
-  
 }
 
 function handleInput(dt) {
-
   const dirX = (inputs.left ? -1 : 0) + (inputs.right ? 1 : 0);
   const dirY = (inputs.up ? -1 : 0) + (inputs.down ? 1 : 0);
 
   player.x += dirX * player.speed * dt;
-  
   player.y += dirY * player.speed * dt;
   player.x = clamp(player.x, player.w / 2, canvas.width - player.w / 2);
   player.y = clamp(player.y, player.h / 2, canvas.height - player.h / 2);
@@ -376,6 +387,7 @@ function spawnBullet() {
     speed: 520,
     color: '#37d6ff',
   });
+  sounds.shoot();
 }
 
 function updateBullets(dt) {
