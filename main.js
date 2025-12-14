@@ -1011,9 +1011,9 @@ function drawTIEInterceptor(e, level = 1) {
   ctx.save();
   ctx.translate(-panelOffset - panelSize / 2, 0);
   ctx.rotate(Math.PI / 4);
-  ctx.fillStyle = '#333333';
+  ctx.fillStyle = colors.panel;
   ctx.fillRect(-panelSize / 2, -panelSize / 2, panelSize, panelSize);
-  ctx.strokeStyle = '#555555';
+  ctx.strokeStyle = colors.accent;
   ctx.lineWidth = 2;
   ctx.strokeRect(-panelSize / 2, -panelSize / 2, panelSize, panelSize);
   ctx.restore();
@@ -1022,15 +1022,15 @@ function drawTIEInterceptor(e, level = 1) {
   ctx.save();
   ctx.translate(panelOffset + panelSize / 2, 0);
   ctx.rotate(Math.PI / 4);
-  ctx.fillStyle = '#333333';
+  ctx.fillStyle = colors.panel;
   ctx.fillRect(-panelSize / 2, -panelSize / 2, panelSize, panelSize);
-  ctx.strokeStyle = '#555555';
+  ctx.strokeStyle = colors.accent;
   ctx.lineWidth = 2;
   ctx.strokeRect(-panelSize / 2, -panelSize / 2, panelSize, panelSize);
   ctx.restore();
   
   // Struts
-  ctx.strokeStyle = '#444444';
+  ctx.strokeStyle = colors.stroke;
   ctx.lineWidth = 2;
   ctx.beginPath();
   ctx.moveTo(-radius * 0.7, 0);
@@ -1040,9 +1040,11 @@ function drawTIEInterceptor(e, level = 1) {
   ctx.stroke();
 }
 
-function drawTIEBomber(e) {
+function drawTIEBomber(e, level = 1) {
+  const colors = getLevelColors(level);
+  
   // Larger, bulkier TIE Bomber
-  ctx.fillStyle = '#222222';
+  ctx.fillStyle = colors.panel;
   ctx.beginPath();
   const sides = 8;
   const radius = Math.min(e.w, e.h) * 0.45;
@@ -1081,9 +1083,9 @@ function drawTIEBomber(e) {
   const panelOffset = e.w * 0.55;
   
   // Left panel
-  ctx.fillStyle = '#111111';
+  ctx.fillStyle = colors.panel;
   ctx.fillRect(-panelOffset - panelWidth, -panelHeight / 2, panelWidth, panelHeight);
-  ctx.strokeStyle = '#333333';
+  ctx.strokeStyle = colors.stroke;
   ctx.lineWidth = 3;
   ctx.strokeRect(-panelOffset - panelWidth, -panelHeight / 2, panelWidth, panelHeight);
   
@@ -1092,7 +1094,7 @@ function drawTIEBomber(e) {
   ctx.strokeRect(panelOffset, -panelHeight / 2, panelWidth, panelHeight);
   
   // Thicker struts
-  ctx.strokeStyle = '#333333';
+  ctx.strokeStyle = colors.stroke;
   ctx.lineWidth = 3;
   ctx.beginPath();
   ctx.moveTo(-radius * 0.8, 0);
@@ -1107,9 +1109,11 @@ function drawTIEBomber(e) {
   ctx.fillRect(panelOffset + panelWidth - 10, panelHeight / 2 - 8, 6, 6);
 }
 
-function drawTIEAdvanced(e) {
+function drawTIEAdvanced(e, level = 1) {
+  const colors = getLevelColors(level);
+  
   // TIE Advanced - Elite version with solar panels and enhanced design
-  ctx.fillStyle = '#555555';
+  ctx.fillStyle = colors.pod;
   ctx.beginPath();
   const sides = 8;
   const radius = Math.min(e.w, e.h) * 0.45;
@@ -1157,9 +1161,9 @@ function drawTIEAdvanced(e) {
   const panelOffset = e.w * 0.52;
   
   // Left panel
-  ctx.fillStyle = '#333333';
+  ctx.fillStyle = colors.panel;
   ctx.fillRect(-panelOffset - panelWidth, -panelHeight / 2, panelWidth, panelHeight);
-  ctx.strokeStyle = '#666666';
+  ctx.strokeStyle = colors.stroke;
   ctx.lineWidth = 2;
   ctx.strokeRect(-panelOffset - panelWidth, -panelHeight / 2, panelWidth, panelHeight);
   
@@ -1168,7 +1172,7 @@ function drawTIEAdvanced(e) {
   ctx.strokeRect(panelOffset, -panelHeight / 2, panelWidth, panelHeight);
   
   // Panel grid pattern
-  ctx.strokeStyle = '#555555';
+  ctx.strokeStyle = colors.accent;
   ctx.lineWidth = 1;
   for (let i = 1; i < 4; i++) {
     const y = -panelHeight / 2 + (panelHeight / 5) * i;
@@ -1181,7 +1185,7 @@ function drawTIEAdvanced(e) {
   }
   
   // Enhanced struts
-  ctx.strokeStyle = '#666666';
+  ctx.strokeStyle = colors.stroke;
   ctx.lineWidth = 2;
   ctx.beginPath();
   ctx.moveTo(-radius * 0.75, 0);
@@ -1191,9 +1195,11 @@ function drawTIEAdvanced(e) {
   ctx.stroke();
 }
 
-function drawTIEDefender(e) {
+function drawTIEDefender(e, level = 1) {
+  const colors = getLevelColors(level);
+  
   // TIE Defender - Most advanced, with triple solar panels
-  ctx.fillStyle = '#666666';
+  ctx.fillStyle = colors.pod;
   ctx.beginPath();
   const sides = 8;
   const radius = Math.min(e.w, e.h) * 0.5;
@@ -1241,17 +1247,17 @@ function drawTIEDefender(e) {
   const panelOffset = e.w * 0.5;
   
   // Left panel
-  ctx.fillStyle = '#444444';
+  ctx.fillStyle = colors.panel;
   ctx.fillRect(-panelOffset - panelWidth, -panelHeight / 2, panelWidth, panelHeight);
-  ctx.strokeStyle = '#777777';
+  ctx.strokeStyle = colors.stroke;
   ctx.lineWidth = 2;
   ctx.strokeRect(-panelOffset - panelWidth, -panelHeight / 2, panelWidth, panelHeight);
   
   // Center panel (smaller, between struts)
   const centerPanelWidth = e.w * 0.2;
-  ctx.fillStyle = '#444444';
+  ctx.fillStyle = colors.panel;
   ctx.fillRect(-centerPanelWidth / 2, -panelHeight / 2, centerPanelWidth, panelHeight);
-  ctx.strokeStyle = '#777777';
+  ctx.strokeStyle = colors.stroke;
   ctx.strokeRect(-centerPanelWidth / 2, -panelHeight / 2, centerPanelWidth, panelHeight);
   
   // Right panel
@@ -1259,7 +1265,7 @@ function drawTIEDefender(e) {
   ctx.strokeRect(panelOffset, -panelHeight / 2, panelWidth, panelHeight);
   
   // Enhanced grid pattern
-  ctx.strokeStyle = '#666666';
+  ctx.strokeStyle = colors.accent;
   ctx.lineWidth = 1;
   for (let i = 1; i < 4; i++) {
     const y = -panelHeight / 2 + (panelHeight / 5) * i;
@@ -1272,7 +1278,7 @@ function drawTIEDefender(e) {
   }
   
   // Triple struts
-  ctx.strokeStyle = '#777777';
+  ctx.strokeStyle = colors.stroke;
   ctx.lineWidth = 2;
   ctx.beginPath();
   ctx.moveTo(-radius * 0.8, 0);
