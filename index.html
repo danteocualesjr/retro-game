@@ -30,12 +30,18 @@
     </header>
 
     <section class="playfield">
+      <div class="scanlines"></div>
+      <div class="crt-effect"></div>
       <canvas id="game" width="900" height="600" aria-label="Game canvas"></canvas>
       <div id="overlay" class="overlay hidden" role="status" aria-live="polite">
         <div class="panel">
+          <div class="panel-glow"></div>
           <h1 id="overlay-title">Retro Star Defender</h1>
           <p id="overlay-message">Move with Arrow Keys or WASD. Shoot with Space. Press Enter to start.</p>
-          <button id="start-btn" type="button">Start</button>
+          <button id="start-btn" type="button">
+            <span class="btn-text">Start</span>
+            <span class="btn-glow"></span>
+          </button>
         </div>
       </div>
     </section>
