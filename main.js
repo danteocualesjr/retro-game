@@ -169,6 +169,7 @@ function playMusicLoop() {
   osc.type = 'square';
 
   gain.gain.setValueAtTime(0, audioCtx.currentTime);
+  
   gain.gain.linearRampToValueAtTime(0.08, audioCtx.currentTime + 0.01);
   gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
 
