@@ -11,6 +11,178 @@ const waveEl = document.getElementById('wave');
 const livesEl = document.getElementById('lives');
 const highScoreEl = document.getElementById('high-score');
 
+// Audio Context and Sound System
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+const sounds = {
+  shoot() {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + 0.1);
+
+    gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+
+    osc.start(audioCtx.currentTime);
+    osc.stop(audioCtx.currentTime + 0.1);
+  },
+
+  explosion() {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    const noise = audioCtx.createBufferSource();
+    const noiseGain = audioCtx.createGain();
+
+    // Create noise buffer
+    const bufferSize = audioCtx.sampleRate * 0.3;
+    const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      data[i] = Math.random() * 2 - 1;
+    }
+    noise.buffer = buffer;
+
+    osc.connect(gain);
+    noise.connect(noiseGain);
+    gain.connect(audioCtx.destination);
+    noiseGain.connect(audioCtx.destination);
+
+    osc.frequency.setValueAtTime(200, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.3);
+
+    gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+
+    noiseGain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+    noiseGain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+
+    osc.start(audioCtx.currentTime);
+    noise.start(audioCtx.currentTime);
+    osc.stop(audioCtx.currentTime + 0.3);
+    noise.stop(audioCtx.currentTime + 0.3);
+  },
+
+  hit() {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.05);
+
+    gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+
+    osc.start(audioCtx.currentTime);
+    osc.stop(audioCtx.currentTime + 0.05);
+  },
+
+  playerHit() {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.2);
+
+    gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+
+    osc.start(audioCtx.currentTime);
+    osc.stop(audioCtx.currentTime + 0.2);
+  },
+
+  gameOver() {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.5);
+
+    gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+
+    osc.start(audioCtx.currentTime);
+    osc.stop(audioCtx.currentTime + 0.5);
+  },
+
+  waveComplete() {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+    osc.frequency.setValueAtTime(500, audioCtx.currentTime + 0.1);
+    osc.frequency.setValueAtTime(600, audioCtx.currentTime + 0.2);
+
+    gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+    gain.gain.setValueAtTime(0.2, audioCtx.currentTime + 0.2);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+
+    osc.start(audioCtx.currentTime);
+    osc.stop(audioCtx.currentTime + 0.3);
+  }
+};
+
+// Background music
+let musicOscillators = [];
+let musicPlaying = false;
+
+function startBackgroundMusic() {
+  if (musicPlaying) return;
+  musicPlaying = true;
+  playMusicLoop();
+}
+
+function stopBackgroundMusic() {
+  musicPlaying = false;
+  musicOscillators.forEach(osc => {
+    try {
+      osc.stop();
+    } catch (e) {}
+  });
+  musicOscillators = [];
+}
+
+function playMusicLoop() {
+  if (!musicPlaying || !state.running) return;
+
+  const notes = [262, 330, 392, 330]; // C, E, G, E pattern
+  const noteIndex = Math.floor(audioCtx.currentTime * 2) % notes.length;
+  const frequency = notes[noteIndex];
+
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+
+  osc.frequency.setValueAtTime(frequency, audioCtx.currentTime);
+  osc.type = 'square';
+
+  gain.gain.setValueAtTime(0, audioCtx.currentTime);
+  gain.gain.linearRampToValueAtTime(0.08, audioCtx.currentTime + 0.01);
+  gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+
+  osc.start(audioCtx.currentTime);
+  osc.stop(audioCtx.currentTime + 0.5);
+
+  musicOscillators.push(osc);
+
+  setTimeout(() => {
+    musicOscillators.shift();
+    playMusicLoop();
+  }, 500);
+}
+
 // Load high score from localStorage
 
 function getHighScore() {
