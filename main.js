@@ -279,6 +279,8 @@ const inputs = {
 };
 
 const bullets = [];
+const enemyBullets = []; // Boss bullets
+const bombs = []; // Boss bombs
 const enemies = [];
 const particles = [];
 const stars = new Array(90).fill(0).map(() => ({
@@ -312,6 +314,8 @@ function resetGame() {
   spawnTimer = 0;
   spawnInterval = 1.35;
   bullets.length = 0;
+  enemyBullets.length = 0;
+  bombs.length = 0;
   enemies.length = 0;
   particles.length = 0;
   updateHud();
@@ -401,6 +405,8 @@ function update(dt) {
   updateStars(dt);
   handleInput(dt);
   updateBullets(dt);
+  updateEnemyBullets(dt);
+  updateBombs(dt);
   updateEnemies(dt);
   updateParticles(dt);
   checkCollisions();
@@ -442,6 +448,59 @@ function updateBullets(dt) {
     b.y -= b.speed * dt;
     if (b.y + b.h < 0) bullets.splice(i, 1);
   }
+}
+
+function updateEnemyBullets(dt) {
+  for (let i = enemyBullets.length - 1; i >= 0; i -= 1) {
+    const b = enemyBullets[i];
+    b.x += b.vx * dt;
+    b.y += b.vy * dt;
+    // Remove if off screen
+    if (b.y - b.h > canvas.height || b.x < -b.w || b.x > canvas.width + b.w) {
+      enemyBullets.splice(i, 1);
+    }
+  }
+}
+
+function updateBombs(dt) {
+  for (let i = bombs.length - 1; i >= 0; i -= 1) {
+    const bomb = bombs[i];
+    bomb.y += bomb.speed * dt;
+    bomb.rotation += dt * 3; // Rotating bomb
+    if (bomb.y - bomb.h > canvas.height) bombs.splice(i, 1);
+  }
+}
+
+function spawnBossBullet(boss) {
+  // Calculate direction to player
+  const dx = player.x - boss.x;
+  const dy = player.y - boss.y;
+  const distance = Math.sqrt(dx * dx + dy * dy);
+  const speed = 200 + state.level * 20;
+  
+  enemyBullets.push({
+    x: boss.x,
+    y: boss.y + boss.h / 2,
+    w: 8,
+    h: 12,
+    speed: speed,
+    vx: (dx / distance) * speed,
+    vy: (dy / distance) * speed,
+    color: '#ff5b4d',
+  });
+}
+
+function spawnBossBomb(boss) {
+  // Drop bomb straight down
+  bombs.push({
+    x: boss.x,
+    y: boss.y + boss.h / 2,
+    w: 16,
+    h: 16,
+    speed: 150 + state.level * 15,
+    rotation: 0,
+    color: '#ffaa00',
+  });
 }
 
 function updateEnemies(dt) {
@@ -494,6 +553,24 @@ function updateEnemies(dt) {
       // Keep boss within screen bounds
       e.x = Math.max(e.w / 2, Math.min(canvas.width - e.w / 2, e.x));
       e.y = Math.max(e.h / 2, Math.min(canvas.height * 0.6, e.y));
+      
+      // Boss shooting logic
+      if (e.shootCooldown !== undefined) {
+        e.shootCooldown -= dt;
+        if (e.shootCooldown <= 0) {
+          spawnBossBullet(e);
+          e.shootCooldown = 1.5 - (state.level * 0.1); // Faster shooting at higher levels
+        }
+      }
+      
+      // Boss bomb deployment logic
+      if (e.bombCooldown !== undefined) {
+        e.bombCooldown -= dt;
+        if (e.bombCooldown <= 0) {
+          spawnBossBomb(e);
+          e.bombCooldown = 3 - (state.level * 0.2); // More frequent bombs at higher levels
+        }
+      }
     } else {
       // Regular enemies move down
       e.y += e.speed * dt;
@@ -639,6 +716,8 @@ function spawnBoss() {
     points: bossPoints,
     type: 5, // Boss type (separate from regular enemies)
     isBoss: true,
+    shootCooldown: 0, // Cooldown for shooting
+    bombCooldown: 0, // Cooldown for bombs
   });
 }
 
@@ -710,6 +789,28 @@ function checkCollisions() {
       loseLife();
     }
   }
+  
+  // Enemy bullets vs player
+  for (let i = enemyBullets.length - 1; i >= 0; i -= 1) {
+    const b = enemyBullets[i];
+    if (rectsIntersect(b, player)) {
+      enemyBullets.splice(i, 1);
+      spawnHitParticles(player.x, player.y, '#ff5b4d', 12);
+      sounds.playerHit();
+      loseLife();
+    }
+  }
+  
+  // Bombs vs player
+  for (let i = bombs.length - 1; i >= 0; i -= 1) {
+    const bomb = bombs[i];
+    if (rectsIntersect(bomb, player)) {
+      bombs.splice(i, 1);
+      spawnHitParticles(player.x, player.y, '#ffaa00', 20);
+      sounds.explosion();
+      loseLife();
+    }
+  }
 }
 
 function loseLife() {
@@ -765,6 +866,8 @@ function draw() {
   drawStars();
   drawPlayer();
   drawBullets();
+  drawEnemyBullets();
+  drawBombs();
   drawEnemies();
   drawParticles();
 }
@@ -822,6 +925,41 @@ function drawBullets() {
   ctx.fillStyle = '#37d6ff';
   for (const b of bullets) {
     ctx.fillRect(b.x - b.w / 2, b.y - b.h / 2, b.w, b.h);
+  }
+}
+
+function drawEnemyBullets() {
+  for (const b of enemyBullets) {
+    ctx.save();
+    ctx.translate(b.x, b.y);
+    ctx.fillStyle = b.color;
+    ctx.fillRect(-b.w / 2, -b.h / 2, b.w, b.h);
+    // Glow effect
+    ctx.shadowBlur = 10;
+    ctx.shadowColor = b.color;
+    ctx.fillRect(-b.w / 2, -b.h / 2, b.w, b.h);
+    ctx.shadowBlur = 0;
+    ctx.restore();
+  }
+}
+
+function drawBombs() {
+  for (const bomb of bombs) {
+    ctx.save();
+    ctx.translate(bomb.x, bomb.y);
+    ctx.rotate(bomb.rotation);
+    // Bomb body
+    ctx.fillStyle = bomb.color;
+    ctx.fillRect(-bomb.w / 2, -bomb.h / 2, bomb.w, bomb.h);
+    // Bomb details
+    ctx.fillStyle = '#ff6600';
+    ctx.fillRect(-bomb.w / 2 + 2, -bomb.h / 2 + 2, bomb.w - 4, bomb.h - 4);
+    // Glow effect
+    ctx.shadowBlur = 15;
+    ctx.shadowColor = bomb.color;
+    ctx.fillRect(-bomb.w / 2, -bomb.h / 2, bomb.w, bomb.h);
+    ctx.shadowBlur = 0;
+    ctx.restore();
   }
 }
 
@@ -1291,61 +1429,164 @@ function drawTIEDefender(e, level = 1) {
 }
 
 function drawBoss(e) {
-  // Large Star Destroyer-like boss ship
+  const level = state.level;
+  const colors = getLevelColors(level);
+  
+  // Giant TIE Fighter Boss - similar to regular TIE fighters but much bigger and more menacing
   const width = e.w;
   const height = e.h;
   
-  // Main hull (triangular/wedge shape)
-  ctx.fillStyle = '#444444';
+  // Central pod (much larger than regular TIE fighters)
+  ctx.fillStyle = colors.pod;
   ctx.beginPath();
-  ctx.moveTo(0, -height / 2);
-  ctx.lineTo(-width / 2, height / 2);
-  ctx.lineTo(width / 2, height / 2);
+  const sides = 8;
+  const radius = Math.min(width, height) * 0.5;
+  for (let i = 0; i < sides; i++) {
+    const angle = (Math.PI * 2 * i) / sides;
+    const x = Math.cos(angle) * radius;
+    const y = Math.sin(angle) * radius;
+    if (i === 0) {
+      ctx.moveTo(x, y);
+    } else {
+      ctx.lineTo(x, y);
+    }
+  }
   ctx.closePath();
   ctx.fill();
   
-  // Hull outline
-  ctx.strokeStyle = '#666666';
-  ctx.lineWidth = 3;
+  // Central pod outline (thicker for boss)
+  ctx.strokeStyle = colors.stroke;
+  ctx.lineWidth = 4;
   ctx.stroke();
   
-  // Bridge tower
-  ctx.fillStyle = '#555555';
-  const bridgeWidth = width * 0.3;
-  const bridgeHeight = height * 0.4;
-  ctx.fillRect(-bridgeWidth / 2, -height / 2 - bridgeHeight * 0.3, bridgeWidth, bridgeHeight);
-  ctx.strokeStyle = '#777777';
-  ctx.lineWidth = 2;
-  ctx.strokeRect(-bridgeWidth / 2, -height / 2 - bridgeHeight * 0.3, bridgeWidth, bridgeHeight);
+  // Central pod window (larger and more menacing)
+  ctx.fillStyle = '#000000';
+  ctx.beginPath();
+  const innerRadius = radius * 0.55;
+  for (let i = 0; i < sides; i++) {
+    const angle = (Math.PI * 2 * i) / sides;
+    const x = Math.cos(angle) * innerRadius;
+    const y = Math.sin(angle) * innerRadius;
+    if (i === 0) {
+      ctx.moveTo(x, y);
+    } else {
+      ctx.lineTo(x, y);
+    }
+  }
+  ctx.closePath();
+  ctx.fill();
   
-  // Bridge windows
-  ctx.fillStyle = '#ff5b4d';
-  for (let i = 0; i < 3; i++) {
-    ctx.fillRect(-bridgeWidth / 2 + 4 + i * (bridgeWidth / 4), -height / 2 - bridgeHeight * 0.2, 4, 6);
+  // Glowing center (pulsing red/orange)
+  const glowIntensity = 0.5 + Math.sin(performance.now() * 0.005) * 0.3;
+  ctx.fillStyle = `rgba(255, 91, 77, ${glowIntensity})`;
+  ctx.globalAlpha = glowIntensity;
+  ctx.beginPath();
+  ctx.arc(0, 0, innerRadius * 0.6, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.globalAlpha = 1;
+  
+  // Massive solar panel wings (much larger than regular TIE fighters)
+  const panelWidth = width * 0.45;
+  const panelHeight = height * 0.9;
+  const panelOffset = width * 0.55;
+  
+  // Left solar panel
+  ctx.fillStyle = colors.panel;
+  ctx.fillRect(-panelOffset - panelWidth, -panelHeight / 2, panelWidth, panelHeight);
+  ctx.strokeStyle = colors.stroke;
+  ctx.lineWidth = 4;
+  ctx.strokeRect(-panelOffset - panelWidth, -panelHeight / 2, panelWidth, panelHeight);
+  
+  // Left panel grid pattern (more detailed for boss)
+  ctx.strokeStyle = colors.accent;
+  ctx.lineWidth = 2;
+  for (let i = 1; i < 6; i++) {
+    const y = -panelHeight / 2 + (panelHeight / 7) * i;
+    ctx.beginPath();
+    ctx.moveTo(-panelOffset - panelWidth, y);
+    ctx.lineTo(-panelOffset, y);
+    ctx.stroke();
+  }
+  // Vertical lines
+  for (let i = 1; i < 4; i++) {
+    const x = -panelOffset - panelWidth + (panelWidth / 4) * i;
+    ctx.beginPath();
+    ctx.moveTo(x, -panelHeight / 2);
+    ctx.lineTo(x, panelHeight / 2);
+    ctx.stroke();
   }
   
-  // Engine glow
+  // Right solar panel
+  ctx.fillStyle = colors.panel;
+  ctx.fillRect(panelOffset, -panelHeight / 2, panelWidth, panelHeight);
+  ctx.strokeStyle = colors.stroke;
+  ctx.lineWidth = 4;
+  ctx.strokeRect(panelOffset, -panelHeight / 2, panelWidth, panelHeight);
+  
+  // Right panel grid pattern
+  ctx.strokeStyle = colors.accent;
+  ctx.lineWidth = 2;
+  for (let i = 1; i < 6; i++) {
+    const y = -panelHeight / 2 + (panelHeight / 7) * i;
+    ctx.beginPath();
+    ctx.moveTo(panelOffset, y);
+    ctx.lineTo(panelOffset + panelWidth, y);
+    ctx.stroke();
+  }
+  // Vertical lines
+  for (let i = 1; i < 4; i++) {
+    const x = panelOffset + (panelWidth / 4) * i;
+    ctx.beginPath();
+    ctx.moveTo(x, -panelHeight / 2);
+    ctx.lineTo(x, panelHeight / 2);
+    ctx.stroke();
+  }
+  
+  // Thick connecting struts (more prominent for boss)
+  ctx.strokeStyle = colors.stroke;
+  ctx.lineWidth = 5;
+  ctx.beginPath();
+  ctx.moveTo(-radius * 0.8, 0);
+  ctx.lineTo(-panelOffset, 0);
+  ctx.moveTo(radius * 0.8, 0);
+  ctx.lineTo(panelOffset, 0);
+  ctx.stroke();
+  
+  // Boss weapon ports (visual indication of shooting capability)
   ctx.fillStyle = '#ff5b4d';
-  ctx.fillRect(-width * 0.3, height / 2 - 4, width * 0.6, 8);
+  ctx.globalAlpha = 0.8;
+  // Left weapon port
+  ctx.fillRect(-radius * 0.6, -radius * 0.3, 8, 8);
+  // Right weapon port
+  ctx.fillRect(radius * 0.6 - 8, -radius * 0.3, 8, 8);
+  // Bottom bomb launcher
+  ctx.fillRect(-6, radius * 0.4, 12, 6);
+  ctx.globalAlpha = 1;
   
   // HP bar for boss
   if (e.maxHp) {
-    const barWidth = width;
-    const barHeight = 6;
+    const barWidth = width * 1.2;
+    const barHeight = 8;
     const hpPercent = e.hp / e.maxHp;
     
     // Background
     ctx.fillStyle = '#333333';
-    ctx.fillRect(-barWidth / 2, -height / 2 - 20, barWidth, barHeight);
+    ctx.fillRect(-barWidth / 2, -height / 2 - 30, barWidth, barHeight);
     
-    // HP bar
+    // HP bar with gradient effect
     ctx.fillStyle = hpPercent > 0.5 ? '#00ff00' : hpPercent > 0.25 ? '#ffff00' : '#ff0000';
-    ctx.fillRect(-barWidth / 2, -height / 2 - 20, barWidth * hpPercent, barHeight);
+    ctx.fillRect(-barWidth / 2, -height / 2 - 30, barWidth * hpPercent, barHeight);
     
     // Border
     ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(-barWidth / 2, -height / 2 - 20, barWidth, barHeight);
+    ctx.lineWidth = 2;
+    ctx.strokeRect(-barWidth / 2, -height / 2 - 30, barWidth, barHeight);
+    
+    // HP text
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '12px "Press Start 2P"';
+    ctx.textAlign = 'center';
+    ctx.fillText(`BOSS HP: ${e.hp}/${e.maxHp}`, 0, -height / 2 - 45);
   }
 }
 
