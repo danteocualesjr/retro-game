@@ -167,3 +167,25 @@ button:hover {
   text-shadow: none;
 }
 
+.sound-btn {
+  font-size: 18px;
+  padding: 6px 10px;
+  min-width: 40px;
+  background: #0f152b;
+  border: 2px solid #2d9eff;
+  color: #37d6ff;
+  text-transform: none;
+  letter-spacing: 0;
+  flex-shrink: 0;
+}
+
+.sound-btn:hover {
+  background: #1a2340;
+  border-color: #37d6ff;
+}
+
+.sound-btn.muted {
+  opacity: 0.5;
+  color: #666;
+}
+

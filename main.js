@@ -5,6 +5,7 @@ const overlay = document.getElementById('overlay');
 const overlayTitle = document.getElementById('overlay-title');
 const overlayMessage = document.getElementById('overlay-message');
 const startBtn = document.getElementById('start-btn');
+const soundToggleBtn = document.getElementById('sound-toggle');
 
 const scoreEl = document.getElementById('score');
 const waveEl = document.getElementById('wave');
@@ -16,6 +17,7 @@ let audioCtx = null;
 let musicOscillators = [];
 let musicPlaying = false;
 let musicInterval = null;
+let soundEnabled = true; // Sound toggle state
 
 // Initialize audio context (requires user interaction)
 function initAudio() {
@@ -28,7 +30,7 @@ function initAudio() {
 const sounds = {
   // Laser blaster sound (X-wing shooting)
   shoot() {
-    if (!audioCtx) return;
+    if (!audioCtx || !soundEnabled) return;
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
     osc.connect(gain);
@@ -47,7 +49,7 @@ const sounds = {
 
   // TIE Fighter explosion
   explosion() {
-    if (!audioCtx) return;
+    if (!audioCtx || !soundEnabled) return;
     const osc1 = audioCtx.createOscillator();
     const osc2 = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
@@ -74,7 +76,7 @@ const sounds = {
 
   // Enemy hit sound
   hit() {
-    if (!audioCtx) return;
+    if (!audioCtx || !soundEnabled) return;
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
     osc.connect(gain);
@@ -93,7 +95,7 @@ const sounds = {
 
   // Player hit sound
   playerHit() {
-    if (!audioCtx) return;
+    if (!audioCtx || !soundEnabled) return;
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
     osc.connect(gain);
@@ -112,7 +114,7 @@ const sounds = {
 
   // Game over sound
   gameOver() {
-    if (!audioCtx) return;
+    if (!audioCtx || !soundEnabled) return;
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
     osc.connect(gain);
@@ -132,7 +134,7 @@ const sounds = {
 
 // Background music - Star Wars style retro theme
 function startBackgroundMusic() {
-  if (musicPlaying || !audioCtx) return;
+  if (musicPlaying || !audioCtx || !soundEnabled) return;
   musicPlaying = true;
   
   const playNote = (freq, duration, delay = 0) => {
@@ -289,6 +291,13 @@ function startGame() {
   state.gameOver = false;
   hideOverlay();
   state.lastTime = performance.now();
+  
+  // Initialize audio and start music if sound is enabled
+  if (soundEnabled) {
+    initAudio();
+    startBackgroundMusic();
+  }
+  
   requestAnimationFrame(loop);
 
 }
@@ -297,6 +306,8 @@ function gameOver() {
 
   state.running = false;
   state.gameOver = true;
+  stopBackgroundMusic();
+  sounds.gameOver();
   const isNewHighScore = state.score > state.highScore;
   const message = isNewHighScore
     ? `New High Score: ${state.score}! 🎉\nPress Enter or click Start to try again.`
@@ -718,6 +729,25 @@ document.addEventListener('keydown', (e) => handleKey(e, true));
 document.addEventListener('keyup', (e) => handleKey(e, false));
 startBtn.addEventListener('click', () => {
   if (!state.running) startGame();
+});
+
+// Sound toggle functionality
+soundToggleBtn.addEventListener('click', () => {
+  soundEnabled = !soundEnabled;
+  
+  if (soundEnabled) {
+    soundToggleBtn.textContent = '🔊';
+    soundToggleBtn.classList.remove('muted');
+    // Initialize audio if not already done
+    if (!audioCtx && state.running) {
+      initAudio();
+      startBackgroundMusic();
+    }
+  } else {
+    soundToggleBtn.textContent = '🔇';
+    soundToggleBtn.classList.add('muted');
+    stopBackgroundMusic();
+  }
 });
 
 // Start in idle mode with instructions.
