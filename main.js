@@ -471,17 +471,38 @@ function updateEnemies(dt) {
   for (let i = enemies.length - 1; i >= 0; i -= 1) {
     const e = enemies[i];
     
-    // Boss moves differently (slower, more deliberate)
+    // Boss moves differently - stays on screen and moves in a pattern
     if (e.isBoss) {
-      e.y += e.speed * dt;
-      e.x += Math.sin(performance.now() * 0.001 + e.phase) * 60 * dt;
+      // Initialize boss movement pattern if not set
+      if (e.bossPattern === undefined) {
+        e.bossPattern = {
+          centerY: canvas.height * 0.3, // Stay in upper third of screen
+          amplitudeX: canvas.width * 0.3, // Move side to side
+          amplitudeY: canvas.height * 0.15, // Move up and down slightly
+          phaseX: 0,
+          phaseY: 0,
+        };
+      }
+      
+      // Update boss position with figure-8 like pattern
+      e.bossPattern.phaseX += dt * 0.8; // Horizontal movement speed
+      e.bossPattern.phaseY += dt * 0.5; // Vertical movement speed
+      
+      e.x = canvas.width / 2 + Math.sin(e.bossPattern.phaseX) * e.bossPattern.amplitudeX;
+      e.y = e.bossPattern.centerY + Math.sin(e.bossPattern.phaseY) * e.bossPattern.amplitudeY;
+      
+      // Keep boss within screen bounds
+      e.x = Math.max(e.w / 2, Math.min(canvas.width - e.w / 2, e.x));
+      e.y = Math.max(e.h / 2, Math.min(canvas.height * 0.6, e.y));
     } else {
+      // Regular enemies move down
       e.y += e.speed * dt;
       e.x += Math.sin(performance.now() * 0.002 + e.phase) * 40 * dt;
-    }
-    
-    if (e.y - e.h > canvas.height + 20) {
-      enemies.splice(i, 1);
+      
+      // Remove regular enemies when they go off screen
+      if (e.y - e.h > canvas.height + 20) {
+        enemies.splice(i, 1);
+      }
     }
   }
 }
@@ -804,6 +825,44 @@ function drawBullets() {
   }
 }
 
+// Get level-based color scheme for enemies
+function getLevelColors(level) {
+  const colorSchemes = {
+    1: { // Level 1 - Standard gray
+      pod: '#333333',
+      panel: '#222222',
+      stroke: '#444444',
+      accent: '#555555',
+    },
+    2: { // Level 2 - Slightly blue tint
+      pod: '#334455',
+      panel: '#223344',
+      stroke: '#445566',
+      accent: '#556677',
+    },
+    3: { // Level 3 - Purple tint
+      pod: '#443355',
+      panel: '#332244',
+      stroke: '#554466',
+      accent: '#665577',
+    },
+    4: { // Level 4 - Red/orange tint
+      pod: '#553333',
+      panel: '#442222',
+      stroke: '#664444',
+      accent: '#775555',
+    },
+    5: { // Level 5 - Dark with red accents
+      pod: '#552222',
+      panel: '#331111',
+      stroke: '#773333',
+      accent: '#994444',
+    },
+  };
+  
+  return colorSchemes[level] || colorSchemes[1];
+}
+
 function drawEnemies() {
   for (const e of enemies) {
     ctx.save();
@@ -811,6 +870,7 @@ function drawEnemies() {
     
     const enemyType = e.type || 0;
     const isBoss = e.isBoss || false;
+    const level = state.level;
     
     if (isBoss) {
       // Boss: Large Star Destroyer-like ship
@@ -818,22 +878,22 @@ function drawEnemies() {
     } else {
       switch (enemyType) {
         case 0:
-          drawTIEFighter(e);
+          drawTIEFighter(e, level);
           break;
         case 1:
-          drawTIEInterceptor(e);
+          drawTIEInterceptor(e, level);
           break;
         case 2:
-          drawTIEBomber(e);
+          drawTIEBomber(e, level);
           break;
         case 3:
-          drawTIEAdvanced(e);
+          drawTIEAdvanced(e, level);
           break;
         case 4:
-          drawTIEDefender(e);
+          drawTIEDefender(e, level);
           break;
         default:
-          drawTIEFighter(e);
+          drawTIEFighter(e, level);
       }
     }
     
@@ -841,9 +901,11 @@ function drawEnemies() {
   }
 }
 
-function drawTIEFighter(e) {
+function drawTIEFighter(e, level = 1) {
+  const colors = getLevelColors(level);
+  
   // TIE Fighter central pod
-  ctx.fillStyle = '#333333';
+  ctx.fillStyle = colors.pod;
   ctx.beginPath();
   const sides = 8;
   const radius = Math.min(e.w, e.h) * 0.4;
@@ -883,9 +945,9 @@ function drawTIEFighter(e) {
   const panelOffset = e.w * 0.5;
   
   // Left panel
-  ctx.fillStyle = '#222222';
+  ctx.fillStyle = colors.panel;
   ctx.fillRect(-panelOffset - panelWidth, -panelHeight / 2, panelWidth, panelHeight);
-  ctx.strokeStyle = '#444444';
+  ctx.strokeStyle = colors.stroke;
   ctx.lineWidth = 2;
   ctx.strokeRect(-panelOffset - panelWidth, -panelHeight / 2, panelWidth, panelHeight);
   
@@ -894,7 +956,7 @@ function drawTIEFighter(e) {
   ctx.strokeRect(panelOffset, -panelHeight / 2, panelWidth, panelHeight);
   
   // Connecting struts
-  ctx.strokeStyle = '#444444';
+  ctx.strokeStyle = colors.stroke;
   ctx.lineWidth = 2;
   ctx.beginPath();
   ctx.moveTo(-radius * 0.7, 0);
@@ -904,9 +966,11 @@ function drawTIEFighter(e) {
   ctx.stroke();
 }
 
-function drawTIEInterceptor(e) {
+function drawTIEInterceptor(e, level = 1) {
+  const colors = getLevelColors(level);
+  
   // Similar to TIE Fighter but with angled wings
-  ctx.fillStyle = '#444444';
+  ctx.fillStyle = colors.pod;
   ctx.beginPath();
   const sides = 8;
   const radius = Math.min(e.w, e.h) * 0.4;
