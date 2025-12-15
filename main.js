@@ -1,17 +1,39 @@
-const canvas = document.getElementById('game');
-const ctx = canvas.getContext('2d');
+// Get DOM elements - will be set when DOM is ready
+let canvas, ctx, overlay, overlayTitle, overlayMessage, startBtn, soundToggleBtn;
+let scoreEl, waveEl, levelEl, livesEl, highScoreEl;
 
-const overlay = document.getElementById('overlay');
-const overlayTitle = document.getElementById('overlay-title');
-const overlayMessage = document.getElementById('overlay-message');
-const startBtn = document.getElementById('start-btn');
-const soundToggleBtn = document.getElementById('sound-toggle');
+function initDOM() {
+  canvas = document.getElementById('game');
+  if (!canvas) {
+    console.error('Canvas element not found!');
+    return false;
+  }
+  ctx = canvas.getContext('2d');
+  if (!ctx) {
+    console.error('Could not get 2D context!');
+    return false;
+  }
 
-const scoreEl = document.getElementById('score');
-const waveEl = document.getElementById('wave');
-const levelEl = document.getElementById('level');
-const livesEl = document.getElementById('lives');
-const highScoreEl = document.getElementById('high-score');
+  overlay = document.getElementById('overlay');
+  overlayTitle = document.getElementById('overlay-title');
+  overlayMessage = document.getElementById('overlay-message');
+  startBtn = document.getElementById('start-btn');
+  soundToggleBtn = document.getElementById('sound-toggle');
+
+  scoreEl = document.getElementById('score');
+  waveEl = document.getElementById('wave');
+  levelEl = document.getElementById('level');
+  livesEl = document.getElementById('lives');
+  highScoreEl = document.getElementById('high-score');
+  
+  if (!canvas || !overlay || !startBtn) {
+    console.error('Required DOM elements not found!');
+    return false;
+  }
+  
+  console.log('DOM elements initialized successfully');
+  return true;
+}
 
 // Audio Context and Sound System
 let audioCtx = null;
@@ -341,15 +363,13 @@ const state = {
 };
 
 const player = {
-
-  x: canvas.width / 2,
-  y: canvas.height - 90,
+  x: 450, // Will be updated when canvas is ready
+  y: 510, // Will be updated when canvas is ready
   w: 36,
   h: 28,
   speed: 320,
   cooldown: 0,
   lives: 3,
-
 };
 
 const inputs = {
@@ -381,6 +401,10 @@ let spawnTimer = 0;
 let spawnInterval = 1.35;
 
 function resetGame() {
+  if (!canvas) {
+    console.error('Cannot reset game: canvas not initialized');
+    return;
+  }
 
   state.running = false;
   state.gameOver = false;
@@ -404,7 +428,6 @@ function resetGame() {
   particles.length = 0;
   updateHud();
   showOverlay('Retro Star Defender', 'Move with Arrow Keys or WASD. Shoot with Space. Press Enter or click Start to play.');
-
 }
 
 function startGame() {
@@ -1793,6 +1816,81 @@ soundToggleBtn.addEventListener('click', () => {
   }
 });
 
-// Start in idle mode with instructions.
-resetGame();
+// Wait for DOM to be ready, then initialize
+function initializeGame() {
+  if (!initDOM()) {
+    console.error('Failed to initialize DOM elements');
+    return;
+  }
+  
+  // Set up event listeners
+  document.addEventListener('keydown', (e) => handleKey(e, true));
+  document.addEventListener('keyup', (e) => handleKey(e, false));
+  
+  // Handle button click - works with nested spans
+  if (startBtn) {
+    startBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log('Start button clicked, state.running:', state.running);
+      if (!state.running) {
+        try {
+          startGame();
+          console.log('Game started successfully');
+        } catch (error) {
+          console.error('Error starting game:', error);
+          alert('Error starting game. Check console for details.');
+        }
+      }
+    });
+    
+    // Also handle clicks on nested elements
+    const btnText = startBtn.querySelector('.btn-text');
+    if (btnText) {
+      btnText.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!state.running) {
+          startGame();
+        }
+      });
+    }
+  } else {
+    console.error('Start button not found!');
+  }
+
+  // Sound toggle functionality
+  if (soundToggleBtn) {
+    soundToggleBtn.addEventListener('click', () => {
+      soundEnabled = !soundEnabled;
+      
+      if (soundEnabled) {
+        soundToggleBtn.textContent = '🔊';
+        soundToggleBtn.classList.remove('muted');
+        // Initialize audio if not already done
+        if (!audioCtx && state.running) {
+          initAudio();
+          startBackgroundMusic();
+        }
+      } else {
+        soundToggleBtn.textContent = '🔇';
+        soundToggleBtn.classList.add('muted');
+        stopBackgroundMusic();
+      }
+    });
+  }
+  
+  // Initialize the game
+  resetGame();
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM loaded, initializing game...');
+    initializeGame();
+  });
+} else {
+  console.log('DOM already ready, initializing game...');
+  initializeGame();
+}
 
