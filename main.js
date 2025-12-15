@@ -1777,7 +1777,15 @@ function initializeGame() {
   }
   
   // Set up event listeners
-  document.addEventListener('keydown', (e) => handleKey(e, true));
+  document.addEventListener('keydown', (e) => {
+    handleKey(e, true);
+    // Direct Enter key handler as backup
+    if (e.code === 'Enter' && !state.running) {
+      console.log('Enter key pressed, starting game...');
+      e.preventDefault();
+      startGame();
+    }
+  });
   document.addEventListener('keyup', (e) => handleKey(e, false));
   
   // Handle button click - works with nested spans
