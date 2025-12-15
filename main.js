@@ -1763,59 +1763,6 @@ function handleKey(event, isDown) {
   }
 }
 
-document.addEventListener('keydown', (e) => handleKey(e, true));
-document.addEventListener('keyup', (e) => handleKey(e, false));
-// Handle button click - works with nested spans
-if (startBtn) {
-  startBtn.addEventListener('click', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    console.log('Start button clicked, state.running:', state.running);
-    if (!state.running) {
-      try {
-        startGame();
-        console.log('Game started successfully');
-      } catch (error) {
-        console.error('Error starting game:', error);
-        alert('Error starting game. Check console for details.');
-      }
-    }
-  });
-  
-  // Also handle clicks on nested elements
-  const btnText = startBtn.querySelector('.btn-text');
-  if (btnText) {
-    btnText.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      if (!state.running) {
-        startGame();
-      }
-    });
-  }
-} else {
-  console.error('Start button not found!');
-}
-
-// Sound toggle functionality
-soundToggleBtn.addEventListener('click', () => {
-  soundEnabled = !soundEnabled;
-  
-  if (soundEnabled) {
-    soundToggleBtn.textContent = '🔊';
-    soundToggleBtn.classList.remove('muted');
-    // Initialize audio if not already done
-    if (!audioCtx && state.running) {
-      initAudio();
-      startBackgroundMusic();
-    }
-  } else {
-    soundToggleBtn.textContent = '🔇';
-    soundToggleBtn.classList.add('muted');
-    stopBackgroundMusic();
-  }
-});
-
 // Wait for DOM to be ready, then initialize
 function initializeGame() {
   if (!initDOM()) {
