@@ -408,20 +408,30 @@ function resetGame() {
 }
 
 function startGame() {
-
-  state.running = true;
-  state.gameOver = false;
-  hideOverlay();
-  state.lastTime = performance.now();
-  
-  // Initialize audio and start music if sound is enabled
-  if (soundEnabled) {
-    initAudio();
-    startBackgroundMusic();
+  try {
+    state.running = true;
+    state.gameOver = false;
+    hideOverlay();
+    state.lastTime = performance.now();
+    
+    // Initialize audio and start music if sound is enabled
+    if (soundEnabled) {
+      try {
+        initAudio();
+        startBackgroundMusic();
+      } catch (audioError) {
+        console.warn('Audio initialization failed:', audioError);
+        // Continue without audio
+      }
+    }
+    
+    // Start the game loop
+    requestAnimationFrame(loop);
+  } catch (error) {
+    console.error('Error in startGame:', error);
+    state.running = false;
+    showOverlay('Error', 'Failed to start game. Please refresh the page.');
   }
-  
-  requestAnimationFrame(loop);
-
 }
 
 function gameOver() {
@@ -439,15 +449,19 @@ function gameOver() {
 }
 
 function showOverlay(title, message) {
-
-  overlayTitle.textContent = title;
-  overlayMessage.textContent = message;
-  overlay.classList.remove('hidden');
-
+  if (overlay && overlayTitle && overlayMessage) {
+    overlayTitle.textContent = title;
+    overlayMessage.textContent = message;
+    overlay.classList.remove('hidden');
+    overlay.style.display = 'flex'; // Force show as backup
+  }
 }
 
 function hideOverlay() {
-  overlay.classList.add('hidden');
+  if (overlay) {
+    overlay.classList.add('hidden');
+    overlay.style.display = 'none'; // Force hide as backup
+  }
 }
 
 function updateHud() {
@@ -1727,9 +1741,31 @@ function handleKey(event, isDown) {
 
 document.addEventListener('keydown', (e) => handleKey(e, true));
 document.addEventListener('keyup', (e) => handleKey(e, false));
-startBtn.addEventListener('click', () => {
-  if (!state.running) startGame();
+// Handle button click - works with nested spans
+startBtn.addEventListener('click', (e) => {
+  e.preventDefault();
+  e.stopPropagation();
+  if (!state.running) {
+    try {
+      startGame();
+    } catch (error) {
+      console.error('Error starting game:', error);
+      alert('Error starting game. Check console for details.');
+    }
+  }
 });
+
+// Also handle clicks on nested elements
+const btnText = startBtn.querySelector('.btn-text');
+if (btnText) {
+  btnText.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!state.running) {
+      startGame();
+    }
+  });
+}
 
 // Sound toggle functionality
 soundToggleBtn.addEventListener('click', () => {
