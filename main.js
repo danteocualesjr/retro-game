@@ -409,6 +409,7 @@ function resetGame() {
 
 function startGame() {
   try {
+    console.log('startGame called, current state:', state);
     state.running = true;
     state.gameOver = false;
     hideOverlay();
@@ -426,7 +427,9 @@ function startGame() {
     }
     
     // Start the game loop
+    console.log('Starting game loop...');
     requestAnimationFrame(loop);
+    console.log('Game loop started, state.running:', state.running);
   } catch (error) {
     console.error('Error in startGame:', error);
     state.running = false;
@@ -453,14 +456,16 @@ function showOverlay(title, message) {
     overlayTitle.textContent = title;
     overlayMessage.textContent = message;
     overlay.classList.remove('hidden');
-    overlay.style.display = 'flex'; // Force show as backup
+    overlay.style.display = 'flex';
+    overlay.style.visibility = 'visible';
   }
 }
 
 function hideOverlay() {
   if (overlay) {
     overlay.classList.add('hidden');
-    overlay.style.display = 'none'; // Force hide as backup
+    overlay.style.display = 'none';
+    overlay.style.visibility = 'hidden';
   }
 }
 
@@ -1742,29 +1747,35 @@ function handleKey(event, isDown) {
 document.addEventListener('keydown', (e) => handleKey(e, true));
 document.addEventListener('keyup', (e) => handleKey(e, false));
 // Handle button click - works with nested spans
-startBtn.addEventListener('click', (e) => {
-  e.preventDefault();
-  e.stopPropagation();
-  if (!state.running) {
-    try {
-      startGame();
-    } catch (error) {
-      console.error('Error starting game:', error);
-      alert('Error starting game. Check console for details.');
-    }
-  }
-});
-
-// Also handle clicks on nested elements
-const btnText = startBtn.querySelector('.btn-text');
-if (btnText) {
-  btnText.addEventListener('click', (e) => {
+if (startBtn) {
+  startBtn.addEventListener('click', (e) => {
     e.preventDefault();
     e.stopPropagation();
+    console.log('Start button clicked, state.running:', state.running);
     if (!state.running) {
-      startGame();
+      try {
+        startGame();
+        console.log('Game started successfully');
+      } catch (error) {
+        console.error('Error starting game:', error);
+        alert('Error starting game. Check console for details.');
+      }
     }
   });
+  
+  // Also handle clicks on nested elements
+  const btnText = startBtn.querySelector('.btn-text');
+  if (btnText) {
+    btnText.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (!state.running) {
+        startGame();
+      }
+    });
+  }
+} else {
+  console.error('Start button not found!');
 }
 
 // Sound toggle functionality
