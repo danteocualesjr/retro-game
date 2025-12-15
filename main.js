@@ -29,7 +29,7 @@ function initAudio() {
 }
 
 const sounds = {
-  // Laser blaster sound (X-wing shooting)
+  // Laser blaster sound (darker, more menacing)
   shoot() {
     if (!audioCtx || !soundEnabled) return;
     const osc = audioCtx.createOscillator();
@@ -37,9 +37,63 @@ const sounds = {
     osc.connect(gain);
     gain.connect(audioCtx.destination);
 
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(800, audioCtx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(400, audioCtx.currentTime + 0.08);
+    osc.type = 'sawtooth'; // More aggressive than sine
+    osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(150, audioCtx.currentTime + 0.1);
+
+    gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+
+    osc.start(audioCtx.currentTime);
+    osc.stop(audioCtx.currentTime + 0.1);
+  },
+
+  // TIE Fighter explosion (deeper, more ominous)
+  explosion() {
+    if (!audioCtx || !soundEnabled) return;
+    const osc1 = audioCtx.createOscillator();
+    const osc2 = audioCtx.createOscillator();
+    const osc3 = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    
+    osc1.connect(gain);
+    osc2.connect(gain);
+    osc3.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    osc1.type = 'sawtooth';
+    osc2.type = 'square';
+    osc3.type = 'triangle';
+    // Much lower frequencies for ominous feel
+    osc1.frequency.setValueAtTime(80, audioCtx.currentTime);
+    osc1.frequency.exponentialRampToValueAtTime(30, audioCtx.currentTime + 0.4);
+    osc2.frequency.setValueAtTime(100, audioCtx.currentTime);
+    osc2.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.4);
+    osc3.frequency.setValueAtTime(60, audioCtx.currentTime);
+    osc3.frequency.exponentialRampToValueAtTime(25, audioCtx.currentTime + 0.4);
+
+    gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+
+    osc1.start(audioCtx.currentTime);
+    osc2.start(audioCtx.currentTime);
+    osc3.start(audioCtx.currentTime);
+    osc1.stop(audioCtx.currentTime + 0.4);
+    osc2.stop(audioCtx.currentTime + 0.4);
+    osc3.stop(audioCtx.currentTime + 0.4);
+  },
+
+  // Enemy hit sound (darker)
+  hit() {
+    if (!audioCtx || !soundEnabled) return;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(60, audioCtx.currentTime + 0.08);
 
     gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
@@ -48,8 +102,8 @@ const sounds = {
     osc.stop(audioCtx.currentTime + 0.08);
   },
 
-  // TIE Fighter explosion
-  explosion() {
+  // Player hit sound (more menacing)
+  playerHit() {
     if (!audioCtx || !soundEnabled) return;
     const osc1 = audioCtx.createOscillator();
     const osc2 = audioCtx.createOscillator();
@@ -61,10 +115,11 @@ const sounds = {
 
     osc1.type = 'sawtooth';
     osc2.type = 'square';
-    osc1.frequency.setValueAtTime(150, audioCtx.currentTime);
-    osc1.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.3);
-    osc2.frequency.setValueAtTime(200, audioCtx.currentTime);
-    osc2.frequency.exponentialRampToValueAtTime(60, audioCtx.currentTime + 0.3);
+    // Lower, more ominous frequencies
+    osc1.frequency.setValueAtTime(120, audioCtx.currentTime);
+    osc1.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.3);
+    osc2.frequency.setValueAtTime(90, audioCtx.currentTime);
+    osc2.frequency.exponentialRampToValueAtTime(35, audioCtx.currentTime + 0.3);
 
     gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
@@ -75,65 +130,8 @@ const sounds = {
     osc2.stop(audioCtx.currentTime + 0.3);
   },
 
-  // Enemy hit sound
-  hit() {
-    if (!audioCtx || !soundEnabled) return;
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-
-    osc.type = 'square';
-    osc.frequency.setValueAtTime(300, audioCtx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(150, audioCtx.currentTime + 0.05);
-
-    gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
-
-    osc.start(audioCtx.currentTime);
-    osc.stop(audioCtx.currentTime + 0.05);
-  },
-
-  // Player hit sound
-  playerHit() {
-    if (!audioCtx || !soundEnabled) return;
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-
-    osc.type = 'sawtooth';
-    osc.frequency.setValueAtTime(200, audioCtx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(80, audioCtx.currentTime + 0.2);
-
-    gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
-
-    osc.start(audioCtx.currentTime);
-    osc.stop(audioCtx.currentTime + 0.2);
-  },
-
-  // Game over sound
+  // Game over sound (deeply ominous)
   gameOver() {
-    if (!audioCtx || !soundEnabled) return;
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-
-    osc.type = 'sawtooth';
-    osc.frequency.setValueAtTime(200, audioCtx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.6);
-
-    gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.6);
-
-    osc.start(audioCtx.currentTime);
-    osc.stop(audioCtx.currentTime + 0.6);
-  },
-
-  // Boss defeat sound (more dramatic)
-  bossDefeat() {
     if (!audioCtx || !soundEnabled) return;
     const osc1 = audioCtx.createOscillator();
     const osc2 = audioCtx.createOscillator();
@@ -143,20 +141,104 @@ const sounds = {
     osc2.connect(gain);
     gain.connect(audioCtx.destination);
 
-    osc1.type = 'sine';
+    osc1.type = 'sawtooth';
     osc2.type = 'square';
-    osc1.frequency.setValueAtTime(400, audioCtx.currentTime);
-    osc1.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.5);
-    osc2.frequency.setValueAtTime(300, audioCtx.currentTime);
-    osc2.frequency.exponentialRampToValueAtTime(600, audioCtx.currentTime + 0.5);
+    // Very low, menacing frequencies
+    osc1.frequency.setValueAtTime(100, audioCtx.currentTime);
+    osc1.frequency.exponentialRampToValueAtTime(30, audioCtx.currentTime + 0.8);
+    osc2.frequency.setValueAtTime(80, audioCtx.currentTime);
+    osc2.frequency.exponentialRampToValueAtTime(25, audioCtx.currentTime + 0.8);
 
     gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.8);
 
     osc1.start(audioCtx.currentTime);
     osc2.start(audioCtx.currentTime);
-    osc1.stop(audioCtx.currentTime + 0.5);
-    osc2.stop(audioCtx.currentTime + 0.5);
+    osc1.stop(audioCtx.currentTime + 0.8);
+    osc2.stop(audioCtx.currentTime + 0.8);
+  },
+
+  // Boss defeat sound (ominous but with slight victory)
+  bossDefeat() {
+    if (!audioCtx || !soundEnabled) return;
+    const osc1 = audioCtx.createOscillator();
+    const osc2 = audioCtx.createOscillator();
+    const osc3 = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    
+    osc1.connect(gain);
+    osc2.connect(gain);
+    osc3.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    osc1.type = 'sawtooth';
+    osc2.type = 'square';
+    osc3.type = 'triangle';
+    // Start low and ominous, rise slightly
+    osc1.frequency.setValueAtTime(60, audioCtx.currentTime);
+    osc1.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + 0.6);
+    osc2.frequency.setValueAtTime(50, audioCtx.currentTime);
+    osc2.frequency.exponentialRampToValueAtTime(150, audioCtx.currentTime + 0.6);
+    osc3.frequency.setValueAtTime(40, audioCtx.currentTime);
+    osc3.frequency.exponentialRampToValueAtTime(120, audioCtx.currentTime + 0.6);
+
+    gain.gain.setValueAtTime(0.35, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.6);
+
+    osc1.start(audioCtx.currentTime);
+    osc2.start(audioCtx.currentTime);
+    osc3.start(audioCtx.currentTime);
+    osc1.stop(audioCtx.currentTime + 0.6);
+    osc2.stop(audioCtx.currentTime + 0.6);
+    osc3.stop(audioCtx.currentTime + 0.6);
+  },
+
+  // Boss shooting sound (deep, menacing)
+  bossShoot() {
+    if (!audioCtx || !soundEnabled) return;
+    const osc1 = audioCtx.createOscillator();
+    const osc2 = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    
+    osc1.connect(gain);
+    osc2.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    osc1.type = 'sawtooth';
+    osc2.type = 'square';
+    // Very low, menacing frequencies
+    osc1.frequency.setValueAtTime(120, audioCtx.currentTime);
+    osc1.frequency.exponentialRampToValueAtTime(80, audioCtx.currentTime + 0.12);
+    osc2.frequency.setValueAtTime(90, audioCtx.currentTime);
+    osc2.frequency.exponentialRampToValueAtTime(60, audioCtx.currentTime + 0.12);
+
+    gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.12);
+
+    osc1.start(audioCtx.currentTime);
+    osc2.start(audioCtx.currentTime);
+    osc1.stop(audioCtx.currentTime + 0.12);
+    osc2.stop(audioCtx.currentTime + 0.12);
+  },
+
+  // Boss bomb deployment sound (ominous warning)
+  bossBomb() {
+    if (!audioCtx || !soundEnabled) return;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    osc.type = 'sawtooth';
+    // Deep, descending tone
+    osc.frequency.setValueAtTime(100, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.2);
+
+    gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+
+    osc.start(audioCtx.currentTime);
+    osc.stop(audioCtx.currentTime + 0.2);
   }
 };
 
@@ -173,11 +255,11 @@ function startBackgroundMusic() {
       osc.connect(gain);
       gain.connect(audioCtx.destination);
 
-      osc.type = 'square';
+      osc.type = 'sawtooth'; // More ominous than square
       osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
 
       gain.gain.setValueAtTime(0, audioCtx.currentTime);
-      gain.gain.linearRampToValueAtTime(0.06, audioCtx.currentTime + 0.01);
+      gain.gain.linearRampToValueAtTime(0.08, audioCtx.currentTime + 0.01);
       gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration * 0.8);
       gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + duration);
 
@@ -187,18 +269,20 @@ function startBackgroundMusic() {
     }, delay);
   };
 
-  // Star Wars inspired melody pattern
+  // Ominous, dark melody pattern (lower frequencies, minor key)
   const melody = [
-    { freq: 392, dur: 0.3 }, // G
-    { freq: 440, dur: 0.3 }, // A
-    { freq: 494, dur: 0.3 }, // B
-    { freq: 523, dur: 0.4 }, // C
-    { freq: 494, dur: 0.3 }, // B
-    { freq: 440, dur: 0.3 }, // A
-    { freq: 392, dur: 0.5 }, // G
-    { freq: 330, dur: 0.3 }, // E
-    { freq: 349, dur: 0.3 }, // F
-    { freq: 392, dur: 0.4 }, // G
+    { freq: 196, dur: 0.4 }, // G (lower octave)
+    { freq: 220, dur: 0.4 }, // A
+    { freq: 247, dur: 0.4 }, // B
+    { freq: 262, dur: 0.5 }, // C
+    { freq: 247, dur: 0.4 }, // B
+    { freq: 220, dur: 0.4 }, // A
+    { freq: 196, dur: 0.6 }, // G
+    { freq: 165, dur: 0.4 }, // E (lower, more ominous)
+    { freq: 175, dur: 0.4 }, // F
+    { freq: 196, dur: 0.5 }, // G
+    { freq: 147, dur: 0.5 }, // D (even lower, adds tension)
+    { freq: 165, dur: 0.4 }, // E
   ];
 
   let currentTime = 0;
@@ -488,6 +572,8 @@ function spawnBossBullet(boss) {
     vy: (dy / distance) * speed,
     color: '#ff5b4d',
   });
+  
+  sounds.bossShoot();
 }
 
 function spawnBossBomb(boss) {
@@ -501,6 +587,8 @@ function spawnBossBomb(boss) {
     rotation: 0,
     color: '#ffaa00',
   });
+  
+  sounds.bossBomb();
 }
 
 function updateEnemies(dt) {
