@@ -1888,6 +1888,9 @@ function initializeGame() {
   resetGame();
 }
 
+// Make startGame globally accessible for inline onclick handler
+window.startGame = startGame;
+
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
     console.log('DOM loaded, initializing game...');
@@ -1897,4 +1900,20 @@ if (document.readyState === 'loading') {
   console.log('DOM already ready, initializing game...');
   initializeGame();
 }
+
+// Also expose a test function for debugging
+window.testGame = function() {
+  console.log('Testing game initialization...');
+  console.log('Canvas:', canvas);
+  console.log('Context:', ctx);
+  console.log('Start button:', startBtn);
+  console.log('State:', state);
+  console.log('Player:', player);
+  if (startBtn) {
+    console.log('Button click test - calling startGame directly...');
+    startGame();
+  } else {
+    console.error('Start button not found!');
+  }
+};
 
