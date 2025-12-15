@@ -433,9 +433,21 @@ function resetGame() {
 function startGame() {
   try {
     console.log('startGame called, current state:', state);
+    console.log('Canvas:', canvas, 'Context:', ctx);
+    
+    if (!canvas || !ctx) {
+      console.error('Canvas or context not initialized!');
+      alert('Game not initialized. Please refresh the page.');
+      return;
+    }
+    
     state.running = true;
     state.gameOver = false;
+    
+    // Hide overlay immediately
+    console.log('Hiding overlay...');
     hideOverlay();
+    
     state.lastTime = performance.now();
     
     // Initialize audio and start music if sound is enabled
@@ -453,10 +465,14 @@ function startGame() {
     console.log('Starting game loop...');
     requestAnimationFrame(loop);
     console.log('Game loop started, state.running:', state.running);
+    
+    // Force a redraw to make sure game is visible
+    draw();
   } catch (error) {
     console.error('Error in startGame:', error);
+    console.error('Error stack:', error.stack);
     state.running = false;
-    showOverlay('Error', 'Failed to start game. Please refresh the page.');
+    showOverlay('Error', 'Failed to start game: ' + error.message + '. Please refresh the page.');
   }
 }
 
@@ -488,7 +504,10 @@ function showOverlay(title, message) {
 function hideOverlay() {
   if (overlay) {
     overlay.classList.add('hidden');
-    console.log('Overlay hidden');
+    overlay.style.display = 'none';
+    overlay.style.visibility = 'hidden';
+    overlay.style.pointerEvents = 'none';
+    console.log('Overlay hidden, classes:', overlay.className);
   } else {
     console.error('Overlay element not found in hideOverlay()');
   }
@@ -994,6 +1013,10 @@ function advanceLevel() {
 }
 
 function draw() {
+  if (!ctx || !canvas) {
+    console.error('Cannot draw: ctx or canvas not initialized');
+    return;
+  }
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   drawStars();
   drawPlayer();
