@@ -295,13 +295,14 @@ canvas {
   align-items: center;
   backdrop-filter: blur(2px);
   transition: opacity 0.2s ease;
+  z-index: 10;
 }
 
 .overlay.hidden {
   opacity: 0;
   pointer-events: none;
-  display: none !important;
   visibility: hidden;
+  z-index: -1;
 }
 
 .panel {

@@ -456,16 +456,12 @@ function showOverlay(title, message) {
     overlayTitle.textContent = title;
     overlayMessage.textContent = message;
     overlay.classList.remove('hidden');
-    overlay.style.display = 'flex';
-    overlay.style.visibility = 'visible';
   }
 }
 
 function hideOverlay() {
   if (overlay) {
     overlay.classList.add('hidden');
-    overlay.style.display = 'none';
-    overlay.style.visibility = 'hidden';
   }
 }
 
