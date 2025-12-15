@@ -479,12 +479,18 @@ function showOverlay(title, message) {
     overlayTitle.textContent = title;
     overlayMessage.textContent = message;
     overlay.classList.remove('hidden');
+    console.log('Overlay shown:', title);
+  } else {
+    console.error('Overlay elements not found in showOverlay()', {overlay, overlayTitle, overlayMessage});
   }
 }
 
 function hideOverlay() {
   if (overlay) {
     overlay.classList.add('hidden');
+    console.log('Overlay hidden');
+  } else {
+    console.error('Overlay element not found in hideOverlay()');
   }
 }
 
@@ -1776,32 +1782,48 @@ function initializeGame() {
   
   // Handle button click - works with nested spans
   if (startBtn) {
-    startBtn.addEventListener('click', (e) => {
+    // Use capture phase to ensure we catch the click
+    startBtn.addEventListener('click', function(e) {
       e.preventDefault();
       e.stopPropagation();
       console.log('Start button clicked, state.running:', state.running);
       if (!state.running) {
+        console.log('Calling startGame()...');
         try {
           startGame();
           console.log('Game started successfully');
         } catch (error) {
           console.error('Error starting game:', error);
-          alert('Error starting game. Check console for details.');
+          alert('Error starting game: ' + error.message);
         }
+      } else {
+        console.log('Game already running, ignoring click');
+      }
+    }, true); // Use capture phase
+    
+    // Also handle clicks on nested elements - use capture
+    const btnText = startBtn.querySelector('.btn-text');
+    const btnGlow = startBtn.querySelector('.btn-glow');
+    [btnText, btnGlow].forEach(el => {
+      if (el) {
+        el.addEventListener('click', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          console.log('Nested element clicked');
+          if (!state.running) {
+            startGame();
+          }
+        }, true);
       }
     });
     
-    // Also handle clicks on nested elements
-    const btnText = startBtn.querySelector('.btn-text');
-    if (btnText) {
-      btnText.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        if (!state.running) {
-          startGame();
-        }
-      });
-    }
+    // Also add mousedown as backup
+    startBtn.addEventListener('mousedown', function(e) {
+      e.preventDefault();
+      if (!state.running) {
+        startGame();
+      }
+    });
   } else {
     console.error('Start button not found!');
   }
