@@ -1788,13 +1788,16 @@ function initializeGame() {
   });
   document.addEventListener('keyup', (e) => handleKey(e, false));
   
-  // Handle button click - works with nested spans
+  // Handle button click - multiple methods to ensure it works
   if (startBtn) {
-    // Use capture phase to ensure we catch the click
-    startBtn.addEventListener('click', function(e) {
+    console.log('Setting up start button event listeners...');
+    
+    // Primary click handler
+    const handleStartClick = function(e) {
       e.preventDefault();
       e.stopPropagation();
-      console.log('Start button clicked, state.running:', state.running);
+      console.log('Start button clicked! state.running:', state.running);
+      
       if (!state.running) {
         console.log('Calling startGame()...');
         try {
@@ -1807,31 +1810,32 @@ function initializeGame() {
       } else {
         console.log('Game already running, ignoring click');
       }
-    }, true); // Use capture phase
+      return false;
+    };
     
-    // Also handle clicks on nested elements - use capture
+    // Add multiple event types to ensure it works
+    startBtn.onclick = handleStartClick;
+    startBtn.addEventListener('click', handleStartClick, false);
+    startBtn.addEventListener('click', handleStartClick, true); // Capture phase too
+    
+    // Also handle mousedown as backup
+    startBtn.addEventListener('mousedown', function(e) {
+      if (!state.running) {
+        e.preventDefault();
+        startGame();
+      }
+    });
+    
+    // Make sure nested elements don't block clicks
     const btnText = startBtn.querySelector('.btn-text');
     const btnGlow = startBtn.querySelector('.btn-glow');
     [btnText, btnGlow].forEach(el => {
       if (el) {
-        el.addEventListener('click', function(e) {
-          e.preventDefault();
-          e.stopPropagation();
-          console.log('Nested element clicked');
-          if (!state.running) {
-            startGame();
-          }
-        }, true);
+        el.style.pointerEvents = 'none'; // Let clicks pass through to button
       }
     });
     
-    // Also add mousedown as backup
-    startBtn.addEventListener('mousedown', function(e) {
-      e.preventDefault();
-      if (!state.running) {
-        startGame();
-      }
-    });
+    console.log('Start button event listeners set up');
   } else {
     console.error('Start button not found!');
   }

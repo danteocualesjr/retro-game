@@ -388,6 +388,7 @@ button {
 button .btn-text {
   position: relative;
   z-index: 2;
+  pointer-events: none; /* Let clicks pass through to button */
 }
 
 button .btn-glow {
@@ -396,6 +397,7 @@ button .btn-glow {
   left: 50%;
   width: 0;
   height: 0;
+  pointer-events: none; /* Let clicks pass through to button */
   background: radial-gradient(circle, rgba(255, 255, 255, 0.5) 0%, transparent 70%);
   transform: translate(-50%, -50%);
   transition: width 0.5s ease, height 0.5s ease;
