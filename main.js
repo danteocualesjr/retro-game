@@ -434,15 +434,7 @@ const enemyBullets = []; // Boss bullets
 const bombs = []; // Boss bombs
 const enemies = [];
 const particles = [];
-const stars = new Array(90).fill(0).map(() => ({
-
-  x: Math.random() * canvas.width,
-
-  y: Math.random() * canvas.height,
-  speed: 40 + Math.random() * 90,
-  size: 1 + Math.random() * 2,
-
-}));
+const stars = []; // Will be initialized when canvas is ready
 
 let spawnTimer = 0;
 let spawnInterval = 1.35;
@@ -473,6 +465,20 @@ function resetGame() {
   bombs.length = 0;
   enemies.length = 0;
   particles.length = 0;
+  
+  // Initialize stars if not already done or if array is empty
+  if (stars.length === 0 && canvas && canvas.width && canvas.height) {
+    for (let i = 0; i < 90; i++) {
+      stars.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        speed: 40 + Math.random() * 90,
+        size: 1 + Math.random() * 2,
+      });
+    }
+    console.log('Stars initialized:', stars.length);
+  }
+  
   updateHud();
   showOverlay('Retro Star Defender', 'Move with Arrow Keys or WASD. Shoot with Space. Press Enter or click Start to play.');
 }
@@ -513,6 +519,20 @@ function startGame() {
     }
     
     console.log('Canvas and context verified:', canvas, ctx);
+    
+    // Initialize stars if not already done
+    if (stars.length === 0 && canvas && canvas.width && canvas.height) {
+      console.log('Initializing stars...');
+      for (let i = 0; i < 90; i++) {
+        stars.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          speed: 40 + Math.random() * 90,
+          size: 1 + Math.random() * 2,
+        });
+      }
+      console.log('Stars initialized:', stars.length);
+    }
     
     state.running = true;
     state.gameOver = false;
