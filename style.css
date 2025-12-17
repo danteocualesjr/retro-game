@@ -141,14 +141,18 @@ body::before {
 }
 
 .top-bar {
-  flex-wrap: wrap;
+  display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  min-width: 0;
 }
 
 .title {
-  font-size: 14px;
-  letter-spacing: 3px;
+  font-size: 12px;
+  letter-spacing: 2px;
   background: linear-gradient(180deg, #37d6ff 0%, #90e0ff 50%, #37d6ff 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -159,8 +163,11 @@ body::before {
     0 0 30px rgba(55, 214, 255, 0.3);
   animation: titleGlow 2s ease-in-out infinite;
   position: relative;
-  flex-shrink: 0;
+  flex-shrink: 1;
   white-space: nowrap;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 @keyframes titleGlow {
@@ -174,16 +181,17 @@ body::before {
 
 .controls-legend {
   display: flex;
-  gap: 12px;
-  font-size: 9px;
+  gap: 8px;
+  font-size: 8px;
   color: #90e0ff;
   flex-shrink: 0;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
+  white-space: nowrap;
 }
 
 .controls-legend span {
-  padding: 4px 8px;
+  padding: 3px 6px;
   background: rgba(55, 214, 255, 0.1);
   border: 1px solid rgba(55, 214, 255, 0.3);
   border-radius: 4px;
@@ -201,15 +209,16 @@ body::before {
 
 .hud {
   display: flex;
-  gap: 12px;
-  font-size: 10px;
+  gap: 8px;
+  font-size: 9px;
   flex-shrink: 0;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
+  white-space: nowrap;
 }
 
 .hud span {
-  padding: 4px 8px;
+  padding: 3px 6px;
   background: rgba(0, 0, 0, 0.4);
   border: 1px solid rgba(55, 214, 255, 0.2);
   border-radius: 4px;
@@ -502,9 +511,9 @@ button:active {
 }
 
 .sound-btn {
-  font-size: 20px;
-  padding: 8px 12px;
-  min-width: 44px;
+  font-size: 18px;
+  padding: 6px 10px;
+  min-width: 40px;
   background: linear-gradient(180deg, #0f152b 0%, #0a0f1d 100%);
   border: 2px solid #2d9eff;
   color: #37d6ff;
