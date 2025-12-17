@@ -3,16 +3,21 @@ let canvas, ctx, overlay, overlayTitle, overlayMessage, startBtn, soundToggleBtn
 let scoreEl, waveEl, levelEl, livesEl, highScoreEl;
 
 function initDOM() {
+  console.log('initDOM called, document.readyState:', document.readyState);
+  
   canvas = document.getElementById('game');
   if (!canvas) {
-    console.error('Canvas element not found!');
+    console.error('Canvas element not found! Available elements:', document.querySelectorAll('canvas'));
     return false;
   }
+  console.log('Canvas found:', canvas);
+  
   ctx = canvas.getContext('2d');
   if (!ctx) {
     console.error('Could not get 2D context!');
     return false;
   }
+  console.log('Context created:', ctx);
 
   overlay = document.getElementById('overlay');
   overlayTitle = document.getElementById('overlay-title');
@@ -26,8 +31,25 @@ function initDOM() {
   livesEl = document.getElementById('lives');
   highScoreEl = document.getElementById('high-score');
   
+  console.log('Elements found:', {
+    overlay: !!overlay,
+    overlayTitle: !!overlayTitle,
+    overlayMessage: !!overlayMessage,
+    startBtn: !!startBtn,
+    soundToggleBtn: !!soundToggleBtn,
+    scoreEl: !!scoreEl,
+    waveEl: !!waveEl,
+    levelEl: !!levelEl,
+    livesEl: !!livesEl,
+    highScoreEl: !!highScoreEl
+  });
+  
   if (!canvas || !overlay || !startBtn) {
-    console.error('Required DOM elements not found!');
+    console.error('Required DOM elements not found!', {
+      canvas: !!canvas,
+      overlay: !!overlay,
+      startBtn: !!startBtn
+    });
     return false;
   }
   
@@ -433,13 +455,25 @@ function resetGame() {
 function startGame() {
   try {
     console.log('startGame called, current state:', state);
-    console.log('Canvas:', canvas, 'Context:', ctx);
     
+    // Ensure DOM is initialized - try to initialize if not already done
     if (!canvas || !ctx) {
-      console.error('Canvas or context not initialized!');
+      console.log('Canvas not initialized, attempting to initialize DOM...');
+      if (!initDOM()) {
+        console.error('Failed to initialize DOM elements');
+        alert('Game initialization failed. Please refresh the page.');
+        return;
+      }
+    }
+    
+    // Double-check after initialization attempt
+    if (!canvas || !ctx) {
+      console.error('Canvas or context still not initialized after initDOM()');
       alert('Game not initialized. Please refresh the page.');
       return;
     }
+    
+    console.log('Canvas and context verified:', canvas, ctx);
     
     state.running = true;
     state.gameOver = false;
@@ -1888,16 +1922,34 @@ function initializeGame() {
   resetGame();
 }
 
-// Make startGame globally accessible for inline onclick handler
+// Initialize DOM immediately if possible, otherwise wait
+function ensureInitialized() {
+  if (!canvas || !ctx) {
+    console.log('Ensuring DOM is initialized...');
+    if (!initDOM()) {
+      console.warn('initDOM failed, will retry on DOMContentLoaded');
+      return false;
+    }
+    console.log('DOM initialized successfully');
+    return true;
+  }
+  return true;
+}
+
+// Make startGame globally accessible for inline onclick handler (override early version)
 window.startGame = startGame;
 
+// Try to initialize immediately
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
     console.log('DOM loaded, initializing game...');
+    ensureInitialized();
     initializeGame();
   });
 } else {
   console.log('DOM already ready, initializing game...');
+  // Try to initialize DOM elements immediately
+  ensureInitialized();
   initializeGame();
 }
 
