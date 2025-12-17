@@ -165,8 +165,9 @@ body::before {
 }
 
 .title {
-  font-size: 12px;
-  letter-spacing: 2px;
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  line-height: 1.2;
   background: linear-gradient(180deg, #37d6ff 0%, #90e0ff 50%, #37d6ff 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -177,11 +178,9 @@ body::before {
     0 0 30px rgba(55, 214, 255, 0.3);
   animation: titleGlow 2s ease-in-out infinite;
   position: relative;
-  flex-shrink: 1;
+  flex-shrink: 0;
   white-space: nowrap;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow: visible;
 }
 
 @keyframes titleGlow {
