@@ -1950,24 +1950,35 @@ function ensureInitialized() {
   return true;
 }
 
-// Make startGame globally accessible immediately for inline onclick handler
-window.startGame = startGame;
-
 // Initialize DOM elements IMMEDIATELY when script loads (script is at end of body, so DOM should be ready)
 // This ensures canvas/ctx are available even if button is clicked before initializeGame() runs
 console.log('Script loading, document.readyState:', document.readyState);
 
-// Function to initialize DOM and then run full game initialization
-function doInitialization() {
-  console.log('Attempting to initialize DOM...');
-  if (initDOM()) {
-    console.log('DOM initialized successfully');
+// Try to initialize DOM immediately - don't wait
+let domInitialized = false;
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM loaded, initializing...');
+    domInitialized = initDOM();
+    if (domInitialized) {
+      console.log('DOM initialized successfully on DOMContentLoaded');
+      initializeGame();
+    } else {
+      console.error('Failed to initialize DOM on DOMContentLoaded');
+    }
+  });
+} else {
+  // DOM already ready, initialize immediately
+  console.log('DOM already ready, initializing immediately...');
+  domInitialized = initDOM();
+  if (domInitialized) {
+    console.log('DOM initialized successfully immediately');
     initializeGame();
   } else {
-    console.error('Failed to initialize DOM, will retry...');
-    // Retry after a short delay
+    console.error('Failed to initialize DOM immediately, will retry...');
     setTimeout(() => {
-      if (initDOM()) {
+      domInitialized = initDOM();
+      if (domInitialized) {
         console.log('DOM initialized successfully on retry');
         initializeGame();
       } else {
@@ -1977,17 +1988,8 @@ function doInitialization() {
   }
 }
 
-if (document.readyState === 'loading') {
-  // DOM still loading, wait for it
-  document.addEventListener('DOMContentLoaded', () => {
-    console.log('DOM loaded, initializing...');
-    doInitialization();
-  });
-} else {
-  // DOM already ready, initialize immediately
-  console.log('DOM already ready, initializing immediately...');
-  doInitialization();
-}
+// Make startGame globally accessible immediately for inline onclick handler
+window.startGame = startGame;
 
 // Also expose a test function for debugging
 window.testGame = function() {
