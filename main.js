@@ -455,20 +455,34 @@ function resetGame() {
 function startGame() {
   try {
     console.log('startGame called, current state:', state);
+    console.log('Canvas:', canvas, 'Context:', ctx);
+    console.log('Document readyState:', document.readyState);
     
     // Ensure DOM is initialized - try to initialize if not already done
     if (!canvas || !ctx) {
       console.log('Canvas not initialized, attempting to initialize DOM...');
-      if (!initDOM()) {
+      console.log('Canvas element in DOM?', !!document.getElementById('game'));
+      
+      // Try to initialize
+      const initSuccess = initDOM();
+      console.log('initDOM result:', initSuccess);
+      console.log('After initDOM - Canvas:', canvas, 'Context:', ctx);
+      
+      if (!initSuccess) {
         console.error('Failed to initialize DOM elements');
-        alert('Game initialization failed. Please refresh the page.');
+        console.error('Available canvas elements:', document.querySelectorAll('canvas').length);
+        console.error('Game element:', document.getElementById('game'));
+        alert('Game initialization failed. The canvas element may not be ready. Please refresh the page.');
         return;
       }
     }
     
-    // Double-check after initialization attempt
+    // Final check
     if (!canvas || !ctx) {
       console.error('Canvas or context still not initialized after initDOM()');
+      console.error('Canvas element exists?', !!document.getElementById('game'));
+      console.error('Canvas variable:', canvas);
+      console.error('Context variable:', ctx);
       alert('Game not initialized. Please refresh the page.');
       return;
     }
@@ -1936,21 +1950,43 @@ function ensureInitialized() {
   return true;
 }
 
-// Make startGame globally accessible for inline onclick handler (override early version)
+// Make startGame globally accessible immediately for inline onclick handler
 window.startGame = startGame;
 
-// Try to initialize immediately
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => {
-    console.log('DOM loaded, initializing game...');
-    ensureInitialized();
+// Initialize DOM elements IMMEDIATELY when script loads (script is at end of body, so DOM should be ready)
+// This ensures canvas/ctx are available even if button is clicked before initializeGame() runs
+console.log('Script loading, document.readyState:', document.readyState);
+
+// Function to initialize DOM and then run full game initialization
+function doInitialization() {
+  console.log('Attempting to initialize DOM...');
+  if (initDOM()) {
+    console.log('DOM initialized successfully');
     initializeGame();
+  } else {
+    console.error('Failed to initialize DOM, will retry...');
+    // Retry after a short delay
+    setTimeout(() => {
+      if (initDOM()) {
+        console.log('DOM initialized successfully on retry');
+        initializeGame();
+      } else {
+        console.error('Failed to initialize DOM on retry');
+      }
+    }, 100);
+  }
+}
+
+if (document.readyState === 'loading') {
+  // DOM still loading, wait for it
+  document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM loaded, initializing...');
+    doInitialization();
   });
 } else {
-  console.log('DOM already ready, initializing game...');
-  // Try to initialize DOM elements immediately
-  ensureInitialized();
-  initializeGame();
+  // DOM already ready, initialize immediately
+  console.log('DOM already ready, initializing immediately...');
+  doInitialization();
 }
 
 // Also expose a test function for debugging
