@@ -5,19 +5,36 @@ let scoreEl, waveEl, levelEl, livesEl, highScoreEl;
 function initDOM() {
   console.log('initDOM called, document.readyState:', document.readyState);
   
+  // Check if document.body exists (DOM must be ready)
+  if (!document.body) {
+    console.error('document.body not ready yet');
+    return false;
+  }
+  
   canvas = document.getElementById('game');
   if (!canvas) {
-    console.error('Canvas element not found! Available elements:', document.querySelectorAll('canvas'));
-    return false;
+    console.error('Canvas element not found!');
+    console.error('Available canvas elements:', document.querySelectorAll('canvas').length);
+    console.error('Body children:', document.body.children.length);
+    // Try querySelector as fallback
+    canvas = document.querySelector('canvas#game');
+    if (!canvas) {
+      return false;
+    }
   }
-  console.log('Canvas found:', canvas);
+  console.log('Canvas found:', canvas, 'Width:', canvas.width, 'Height:', canvas.height);
   
-  ctx = canvas.getContext('2d');
-  if (!ctx) {
-    console.error('Could not get 2D context!');
+  try {
+    ctx = canvas.getContext('2d');
+    if (!ctx) {
+      console.error('Could not get 2D context!');
+      return false;
+    }
+    console.log('Context created:', ctx);
+  } catch (e) {
+    console.error('Error getting context:', e);
     return false;
   }
-  console.log('Context created:', ctx);
 
   overlay = document.getElementById('overlay');
   overlayTitle = document.getElementById('overlay-title');
@@ -44,13 +61,21 @@ function initDOM() {
     highScoreEl: !!highScoreEl
   });
   
-  if (!canvas || !overlay || !startBtn) {
-    console.error('Required DOM elements not found!', {
+  // Only require canvas, overlay, and startBtn - others are optional for now
+  if (!canvas || !ctx) {
+    console.error('Required canvas/context not found!', {
       canvas: !!canvas,
+      ctx: !!ctx
+    });
+    return false;
+  }
+  
+  if (!overlay || !startBtn) {
+    console.warn('Overlay or startBtn not found, but continuing...', {
       overlay: !!overlay,
       startBtn: !!startBtn
     });
-    return false;
+    // Don't fail completely, just warn
   }
   
   console.log('DOM elements initialized successfully');

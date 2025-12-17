@@ -56,26 +56,7 @@
     </footer>
   </main>
 
-  <script>
-    // Ensure DOM is ready before loading game script
-    (function() {
-      function loadGame() {
-        const script = document.createElement('script');
-        script.src = 'main.js';
-        script.onerror = function() {
-          console.error('Failed to load main.js');
-          alert('Failed to load game script. Please refresh the page.');
-        };
-        document.body.appendChild(script);
-      }
-      
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', loadGame);
-      } else {
-        loadGame();
-      }
-    })();
-  </script>
+  <script src="main.js"></script>
 </body>
 </html>
 
