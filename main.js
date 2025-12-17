@@ -1,6 +1,6 @@
 // Get DOM elements - will be set when DOM is ready
 let canvas, ctx, overlay, overlayTitle, overlayMessage, startBtn, soundToggleBtn;
-let scoreEl, waveEl, levelEl, livesEl, highScoreEl;
+let scoreEl, waveEl, levelEl, livesEl, highScoreEl, fireModeEl;
 
 function initDOM() {
   console.log('initDOM called, document.readyState:', document.readyState);
@@ -47,6 +47,7 @@ function initDOM() {
   levelEl = document.getElementById('level');
   livesEl = document.getElementById('lives');
   highScoreEl = document.getElementById('high-score');
+  fireModeEl = document.getElementById('fire-mode');
   
   console.log('Elements found:', {
     overlay: !!overlay,
@@ -409,6 +410,65 @@ const state = {
   
 };
 
+// Fire mode definitions
+const fireModes = {
+  normal: {
+    name: 'Normal',
+    cooldown: 0.22,
+    damage: 1,
+    bulletWidth: 6,
+    bulletHeight: 16,
+    bulletSpeed: 520,
+    bulletColor: '#37d6ff',
+    count: 1,
+    spread: 0,
+  },
+  rapid: {
+    name: 'Rapid',
+    cooldown: 0.08,
+    damage: 1,
+    bulletWidth: 5,
+    bulletHeight: 14,
+    bulletSpeed: 580,
+    bulletColor: '#90e0ff',
+    count: 1,
+    spread: 0,
+  },
+  wide: {
+    name: 'Wide',
+    cooldown: 0.25,
+    damage: 1,
+    bulletWidth: 5,
+    bulletHeight: 15,
+    bulletSpeed: 500,
+    bulletColor: '#2d9eff',
+    count: 3,
+    spread: 20, // degrees
+  },
+  wild: {
+    name: 'Wild',
+    cooldown: 0.18,
+    damage: 1,
+    bulletWidth: 4,
+    bulletHeight: 12,
+    bulletSpeed: 550,
+    bulletColor: '#ff5b4d',
+    count: 5,
+    spread: 35, // degrees, random spread
+  },
+  powerful: {
+    name: 'Powerful',
+    cooldown: 0.35,
+    damage: 3,
+    bulletWidth: 10,
+    bulletHeight: 24,
+    bulletSpeed: 480,
+    bulletColor: '#ffaa00',
+    count: 1,
+    spread: 0,
+  },
+};
+
 const player = {
   x: 450, // Will be updated when canvas is ready
   y: 510, // Will be updated when canvas is ready
@@ -417,6 +477,7 @@ const player = {
   speed: 320,
   cooldown: 0,
   lives: 3,
+  fireMode: 'normal', // Current fire mode
 };
 
 const inputs = {
@@ -458,6 +519,7 @@ function resetGame() {
   player.y = canvas.height - 90;
   player.lives = 3;
   player.cooldown = 0;
+  player.fireMode = 'normal';
   spawnTimer = 0;
   spawnInterval = 1.35;
   bullets.length = 0;
@@ -627,6 +689,13 @@ function updateHud() {
   livesEl.innerHTML = heartsHTML;
   
   highScoreEl.textContent = state.highScore;
+  
+  // Update fire mode display
+  if (fireModeEl) {
+    const mode = fireModes[player.fireMode] || fireModes.normal;
+    fireModeEl.textContent = mode.name;
+    fireModeEl.style.color = mode.bulletColor;
+  }
 }
 
 function loop(timestamp) {
@@ -663,30 +732,66 @@ function handleInput(dt) {
   player.x = clamp(player.x, player.w / 2, canvas.width - player.w / 2);
   player.y = clamp(player.y, player.h / 2, canvas.height - player.h / 2);
 
+  const mode = fireModes[player.fireMode] || fireModes.normal;
   if (player.cooldown > 0) player.cooldown -= dt;
   if (inputs.shoot && player.cooldown <= 0) {
     spawnBullet();
-    player.cooldown = 0.22;
+    player.cooldown = mode.cooldown;
   }
 }
 
 function spawnBullet() {
-  bullets.push({
-    x: player.x,
-    y: player.y - player.h / 2,
-    w: 6,
-    h: 16,
-    speed: 520,
-    color: '#37d6ff',
-  });
+  const mode = fireModes[player.fireMode] || fireModes.normal;
+  const baseAngle = -Math.PI / 2; // Straight up
+  
+  // Spawn bullets based on fire mode
+  for (let i = 0; i < mode.count; i++) {
+    let angle = baseAngle;
+    
+    // Calculate spread for wide/wild modes
+    if (mode.spread > 0) {
+      if (mode.name === 'Wild') {
+        // Random spread for wild mode
+        const spreadRange = (mode.spread * Math.PI) / 180;
+        angle = baseAngle + (Math.random() - 0.5) * spreadRange;
+      } else {
+        // Evenly distributed spread for wide mode
+        const spreadStep = (mode.spread * Math.PI) / 180;
+        const offset = (i - (mode.count - 1) / 2) * spreadStep / (mode.count - 1 || 1);
+        angle = baseAngle + offset;
+      }
+    }
+    
+    bullets.push({
+      x: player.x,
+      y: player.y - player.h / 2,
+      w: mode.bulletWidth,
+      h: mode.bulletHeight,
+      speed: mode.bulletSpeed,
+      color: mode.bulletColor,
+      damage: mode.damage,
+      vx: Math.cos(angle) * mode.bulletSpeed,
+      vy: Math.sin(angle) * mode.bulletSpeed,
+    });
+  }
+  
   sounds.shoot();
 }
 
 function updateBullets(dt) {
   for (let i = bullets.length - 1; i >= 0; i -= 1) {
     const b = bullets[i];
-    b.y -= b.speed * dt;
-    if (b.y + b.h < 0) bullets.splice(i, 1);
+    // Support both old style (straight up) and new style (with vx/vy)
+    if (b.vx !== undefined && b.vy !== undefined) {
+      b.x += b.vx * dt;
+      b.y += b.vy * dt;
+    } else {
+      b.y -= b.speed * dt;
+    }
+    // Remove if off screen
+    if (b.y + b.h < 0 || b.x < -b.w || b.x > canvas.width + b.w || b.y > canvas.height + b.h) {
+      bullets.splice(i, 1);
+    }
   }
 }
 
@@ -993,8 +1098,9 @@ function checkCollisions() {
       const b = bullets[j];
       if (rectsIntersect(e, b)) {
         bullets.splice(j, 1);
-        e.hp -= 1;
-        spawnHitParticles(e.x, e.y, '#ffea61');
+        const damage = b.damage || 1;
+        e.hp -= damage;
+        spawnHitParticles(e.x, e.y, b.color || '#ffea61');
         if (e.hp <= 0) {
           const wasBoss = e.isBoss;
           enemies.splice(i, 1);
@@ -1170,9 +1276,15 @@ function drawPlayer() {
 }
 
 function drawBullets() {
-  ctx.fillStyle = '#37d6ff';
   for (const b of bullets) {
+    ctx.save();
+    ctx.fillStyle = b.color || '#37d6ff';
+    // Add glow effect for different fire modes
+    ctx.shadowBlur = 8;
+    ctx.shadowColor = b.color || '#37d6ff';
     ctx.fillRect(b.x - b.w / 2, b.y - b.h / 2, b.w, b.h);
+    ctx.shadowBlur = 0;
+    ctx.restore();
   }
 }
 
@@ -1882,6 +1994,22 @@ function handleKey(event, isDown) {
   }
   if (event.code === 'Enter' && isDown) {
     if (!state.running) startGame();
+  }
+  
+  // Fire mode switching (1-5 keys)
+  if (isDown && state.running) {
+    const modeKeys = {
+      'Digit1': 'normal',
+      'Digit2': 'rapid',
+      'Digit3': 'wide',
+      'Digit4': 'wild',
+      'Digit5': 'powerful',
+    };
+    if (modeKeys[event.code]) {
+      player.fireMode = modeKeys[event.code];
+      updateHud();
+      event.preventDefault();
+    }
   }
 }
 
