@@ -467,6 +467,28 @@ const fireModes = {
     count: 1,
     spread: 0,
   },
+  rapidWide: {
+    name: 'Rapid Wide',
+    cooldown: 0.12,
+    damage: 1,
+    bulletWidth: 5,
+    bulletHeight: 14,
+    bulletSpeed: 560,
+    bulletColor: '#00ff88',
+    count: 4,
+    spread: 25, // degrees
+  },
+  overwhelming: {
+    name: 'Overwhelming',
+    cooldown: 0.45,
+    damage: 12,
+    bulletWidth: 16,
+    bulletHeight: 32,
+    bulletSpeed: 540,
+    bulletColor: '#ff00ff',
+    count: 7,
+    spread: 40, // degrees, maximum coverage - no enemy can escape
+  },
 };
 
 const player = {
@@ -1996,7 +2018,7 @@ function handleKey(event, isDown) {
     if (!state.running) startGame();
   }
   
-  // Fire mode switching (1-5 keys)
+  // Fire mode switching (1-7 keys)
   if (isDown && state.running) {
     const modeKeys = {
       'Digit1': 'normal',
@@ -2004,6 +2026,8 @@ function handleKey(event, isDown) {
       'Digit3': 'wide',
       'Digit4': 'wild',
       'Digit5': 'powerful',
+      'Digit6': 'rapidWide',
+      'Digit7': 'overwhelming',
     };
     if (modeKeys[event.code]) {
       player.fireMode = modeKeys[event.code];
