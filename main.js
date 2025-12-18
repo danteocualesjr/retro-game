@@ -566,6 +566,18 @@ const fireModes = {
     count: 7,
     spread: 40, // degrees, maximum coverage - no enemy can escape
   },
+  homing: {
+    name: 'Homing',
+    cooldown: 0.06, // Super rapid fire
+    damage: 1,
+    bulletWidth: 6,
+    bulletHeight: 14,
+    bulletSpeed: 600,
+    bulletColor: '#00ffff',
+    count: 5,
+    spread: 30, // Wide spread
+    homing: true, // Bullets track enemies
+  },
 };
 
 const player = {
@@ -882,12 +894,16 @@ function spawnBullet() {
   const mode = fireModes[player.fireMode] || fireModes.normal;
   const baseAngle = -Math.PI / 2; // Straight up
   
+  // For homing mode, find available enemies to target
+  const availableEnemies = enemies.filter(e => !e.isBoss && e.y < canvas.height);
+  
   // Spawn bullets based on fire mode
   for (let i = 0; i < mode.count; i++) {
     let angle = baseAngle;
+    let targetEnemy = null;
     
     // Calculate spread for wide/wild modes
-    if (mode.spread > 0) {
+    if (mode.spread > 0 && !mode.homing) {
       if (mode.name === 'Wild') {
         // Random spread for wild mode
         const spreadRange = (mode.spread * Math.PI) / 180;
@@ -900,7 +916,19 @@ function spawnBullet() {
       }
     }
     
-    bullets.push({
+    // For homing bullets, assign targets
+    if (mode.homing && availableEnemies.length > 0) {
+      // Assign each bullet to a different enemy if possible
+      const targetIndex = i % availableEnemies.length;
+      targetEnemy = availableEnemies[targetIndex];
+      
+      // Calculate initial angle toward target
+      const dx = targetEnemy.x - player.x;
+      const dy = targetEnemy.y - (player.y - player.h / 2);
+      angle = Math.atan2(dy, dx);
+    }
+    
+    const bullet = {
       x: player.x,
       y: player.y - player.h / 2,
       w: mode.bulletWidth,
@@ -910,7 +938,16 @@ function spawnBullet() {
       damage: mode.damage,
       vx: Math.cos(angle) * mode.bulletSpeed,
       vy: Math.sin(angle) * mode.bulletSpeed,
-    });
+    };
+    
+    // Add homing properties if this is a homing bullet
+    if (mode.homing && targetEnemy) {
+      bullet.homing = true;
+      bullet.target = targetEnemy;
+      bullet.turnRate = 4.0; // How fast the bullet can turn (radians per second)
+    }
+    
+    bullets.push(bullet);
   }
   
   sounds.shoot();
@@ -919,6 +956,61 @@ function spawnBullet() {
 function updateBullets(dt) {
   for (let i = bullets.length - 1; i >= 0; i -= 1) {
     const b = bullets[i];
+    
+    // Update homing bullets to track their targets
+    if (b.homing && b.target) {
+      // Check if target still exists and is valid
+      const targetIndex = enemies.indexOf(b.target);
+      if (targetIndex === -1 || b.target.hp <= 0) {
+        // Target destroyed or removed, find a new target
+        const availableEnemies = enemies.filter(e => !e.isBoss && e.y < canvas.height);
+        if (availableEnemies.length > 0) {
+          // Find closest enemy
+          let closestEnemy = availableEnemies[0];
+          let closestDist = Math.sqrt(
+            Math.pow(b.x - closestEnemy.x, 2) + Math.pow(b.y - closestEnemy.y, 2)
+          );
+          for (const enemy of availableEnemies) {
+            const dist = Math.sqrt(
+              Math.pow(b.x - enemy.x, 2) + Math.pow(b.y - enemy.y, 2)
+            );
+            if (dist < closestDist) {
+              closestDist = dist;
+              closestEnemy = enemy;
+            }
+          }
+          b.target = closestEnemy;
+        } else {
+          // No targets available, continue in current direction
+          b.homing = false;
+        }
+      }
+      
+      // If we have a valid target, steer toward it
+      if (b.target && b.homing) {
+        const dx = b.target.x - b.x;
+        const dy = b.target.y - b.y;
+        const targetAngle = Math.atan2(dy, dx);
+        const currentAngle = Math.atan2(b.vy, b.vx);
+        
+        // Calculate angle difference
+        let angleDiff = targetAngle - currentAngle;
+        
+        // Normalize angle to [-PI, PI]
+        while (angleDiff > Math.PI) angleDiff -= 2 * Math.PI;
+        while (angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
+        
+        // Turn toward target (limited by turn rate)
+        const maxTurn = b.turnRate * dt;
+        const turnAmount = Math.max(-maxTurn, Math.min(maxTurn, angleDiff));
+        const newAngle = currentAngle + turnAmount;
+        
+        // Update velocity
+        b.vx = Math.cos(newAngle) * b.speed;
+        b.vy = Math.sin(newAngle) * b.speed;
+      }
+    }
+    
     // Support both old style (straight up) and new style (with vx/vy)
     if (b.vx !== undefined && b.vy !== undefined) {
       b.x += b.vx * dt;
@@ -2262,7 +2354,7 @@ function handleKey(event, isDown) {
     if (!state.running) startGame();
   }
   
-  // Fire mode switching (1-7 keys)
+  // Fire mode switching (1-8 keys)
   if (isDown && state.running) {
     const modeKeys = {
       'Digit1': 'normal',
@@ -2272,6 +2364,7 @@ function handleKey(event, isDown) {
       'Digit5': 'powerful',
       'Digit6': 'rapidWide',
       'Digit7': 'overwhelming',
+      'Digit8': 'homing',
     };
     if (modeKeys[event.code]) {
       player.fireMode = modeKeys[event.code];
