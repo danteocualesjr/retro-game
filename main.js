@@ -808,26 +808,39 @@ function hideOverlay() {
 }
 
 function updateHud() {
+  // Update score
+  if (scoreEl) {
+    scoreEl.textContent = state.score;
+  }
   
-  scoreEl.textContent = state.score;
-  levelEl.textContent = state.level;
-  waveEl.textContent = state.wave;
+  // Update level
+  if (levelEl) {
+    levelEl.textContent = state.level;
+  }
+  
+  // Update wave
+  if (waveEl) {
+    waveEl.textContent = state.wave;
+  }
   
   // Render hearts for lives
-
-  const maxLives = 3;
-  let heartsHTML = '';
-  for (let i = 0; i < maxLives; i++) {
-    if (i < player.lives) {
-      heartsHTML += '<span class="heart">♥</span>';
-    } else {
-      heartsHTML += '<span class="heart empty">♡</span>';
+  if (livesEl) {
+    const maxLives = 3;
+    let heartsHTML = '';
+    for (let i = 0; i < maxLives; i++) {
+      if (i < player.lives) {
+        heartsHTML += '<span class="heart">♥</span>';
+      } else {
+        heartsHTML += '<span class="heart empty">♡</span>';
+      }
     }
+    livesEl.innerHTML = heartsHTML;
   }
-
-  livesEl.innerHTML = heartsHTML;
   
-  highScoreEl.textContent = state.highScore;
+  // Update high score
+  if (highScoreEl) {
+    highScoreEl.textContent = state.highScore;
+  }
   
   // Update fire mode display
   if (fireModeEl) {
@@ -1759,18 +1772,21 @@ function advanceLevel() {
   updateHud();
   
   // Show level transition message
-  const overlay = document.getElementById('overlay');
-  const overlayTitle = document.getElementById('overlay-title');
-  const overlayMessage = document.getElementById('overlay-message');
-  overlayTitle.textContent = `Level ${state.level}!`;
-  overlayMessage.textContent = `Prepare for battle! Boss incoming...`;
-  overlay.classList.remove('hidden');
+  const overlayEl = overlay || document.getElementById('overlay');
+  const overlayTitleEl = overlayTitle || document.getElementById('overlay-title');
+  const overlayMessageEl = overlayMessage || document.getElementById('overlay-message');
   
-  setTimeout(() => {
-    if (state.running) {
-      overlay.classList.add('hidden');
-    }
-  }, 2000);
+  if (overlayEl && overlayTitleEl && overlayMessageEl) {
+    overlayTitleEl.textContent = `Level ${state.level}!`;
+    overlayMessageEl.textContent = `Prepare for battle! Boss incoming...`;
+    overlayEl.classList.remove('hidden');
+    
+    setTimeout(() => {
+      if (state.running && overlayEl) {
+        overlayEl.classList.add('hidden');
+      }
+    }, 2000);
+  }
 }
 
 function draw() {
