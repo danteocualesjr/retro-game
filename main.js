@@ -1354,6 +1354,9 @@ function spawnEnemy() {
       break;
   }
   
+  // Cap maximum speed at 300 pixels/second
+  speed = Math.min(speed, 300);
+  
   enemies.push({
     x: 60 + Math.random() * (canvas.width - 120),
     y: -h,
