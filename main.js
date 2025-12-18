@@ -484,6 +484,7 @@ const state = {
   highScore: getHighScore(),
   enemiesKilled: 0,
   bossSpawned: false,
+  bodyguardsActive: false,
   
 };
 
@@ -1395,31 +1396,33 @@ function updateStars(dt) {
 
 // Bodyguard functions
 function spawnBodyguards() {
-  if (state.bodyguardsActive || bodyguards.length > 0) return;
+  if (state.bodyguardsActive || bodyguards.length > 0) {
+    console.log('Bodyguards already active or exist, skipping spawn');
+    return;
+  }
   
+  console.log('Spawning bodyguards at player position:', player.x, player.y);
   state.bodyguardsActive = true;
   
-  // Create two bodyguards - one on each side of player
+  // Create two bodyguards - positioned independently
   bodyguards.push({
-    x: player.x - 60,
-    y: player.y,
+    x: player.x - 100,
+    y: player.y - 80,
     w: 28,
     h: 22,
-    offsetX: -60, // Offset from player
-    offsetY: 0,
     cooldown: 0,
     shootInterval: 0.3, // Shoot every 0.3 seconds
+    patrolPhase: 0, // Start at different phases for variety
   });
   
   bodyguards.push({
-    x: player.x + 60,
-    y: player.y,
+    x: player.x + 100,
+    y: player.y - 80,
     w: 28,
     h: 22,
-    offsetX: 60, // Offset from player
-    offsetY: 0,
     cooldown: 0,
     shootInterval: 0.3,
+    patrolPhase: Math.PI, // Start at opposite phase
   });
   
   sounds.shieldActivate(); // Use shield sound for bodyguard spawn
@@ -1435,29 +1438,44 @@ function despawnBodyguards() {
 function updateBodyguards(dt) {
   if (!state.bodyguardsActive) return;
   
-  // Update bodyguard positions to follow player
+  // Update bodyguard positions - move independently
   for (let i = 0; i < bodyguards.length; i++) {
     const bg = bodyguards[i];
     
-    // Calculate target position relative to player
-    const targetX = player.x + bg.offsetX;
-    const targetY = player.y + bg.offsetY;
+    // Initialize movement properties if not set
+    if (bg.vx === undefined) {
+      bg.vx = (i === 0 ? -1 : 1) * 150; // Left bodyguard moves left, right moves right
+      bg.vy = -80; // Move upward slightly
+      bg.patrolPhase = Math.random() * Math.PI * 2; // Random starting phase
+    }
     
-    // Smoothly move toward target position
+    // Independent movement - patrol pattern around player area
+    const centerX = player.x;
+    const centerY = player.y - 100; // Stay above player
+    const patrolRadius = 120;
+    const patrolSpeed = 1.5;
+    
+    bg.patrolPhase += dt * patrolSpeed;
+    
+    // Circular patrol pattern around player area
+    const offsetX = Math.cos(bg.patrolPhase) * patrolRadius;
+    const offsetY = Math.sin(bg.patrolPhase) * patrolRadius * 0.6; // Flatten the ellipse
+    
+    const targetX = centerX + offsetX;
+    const targetY = centerY + offsetY;
+    
+    // Smoothly move toward patrol position
     const dx = targetX - bg.x;
     const dy = targetY - bg.y;
     const distance = Math.sqrt(dx * dx + dy * dy);
     
-    if (distance > 2) {
-      const speed = 400; // Movement speed
+    if (distance > 5) {
+      const speed = 300; // Movement speed
       bg.x += (dx / distance) * speed * dt;
       bg.y += (dy / distance) * speed * dt;
-    } else {
-      bg.x = targetX;
-      bg.y = targetY;
     }
     
-    // Keep bodyguards on screen
+    // Keep bodyguards on screen and in reasonable bounds
     bg.x = Math.max(bg.w / 2, Math.min(canvas.width - bg.w / 2, bg.x));
     bg.y = Math.max(bg.h / 2, Math.min(canvas.height - bg.h / 2, bg.y));
     
@@ -2609,10 +2627,18 @@ function handleKey(event, isDown) {
   }
   
   // Toggle bodyguards with key 0 (Digit0)
-  if (event.code === 'Digit0' && isDown && state.running) {
+  if (event.code === 'Digit0' && isDown) {
+    if (!state.running) {
+      console.log('Bodyguards: Game not running');
+      return;
+    }
+    console.log('Bodyguards toggle pressed, current state:', state.bodyguardsActive);
     if (!state.bodyguardsActive) {
+      console.log('Spawning bodyguards...');
       spawnBodyguards();
+      console.log('Bodyguards spawned, count:', bodyguards.length);
     } else {
+      console.log('Despawning bodyguards...');
       despawnBodyguards();
     }
     event.preventDefault();
