@@ -578,6 +578,18 @@ const fireModes = {
     spread: 30, // Wide spread
     homing: true, // Bullets track enemies
   },
+  wideHoming: {
+    name: 'Wide Homing',
+    cooldown: 0.08, // Rapid fire
+    damage: 1,
+    bulletWidth: 5,
+    bulletHeight: 12,
+    bulletSpeed: 580,
+    bulletColor: '#00ffaa',
+    count: 8, // More bullets
+    spread: 50, // Much wider spread
+    homing: true, // Bullets track enemies
+  },
 };
 
 const player = {
@@ -903,7 +915,7 @@ function spawnBullet() {
     let targetEnemy = null;
     
     // Calculate spread for wide/wild modes
-    if (mode.spread > 0 && !mode.homing) {
+    if (mode.spread > 0) {
       if (mode.name === 'Wild') {
         // Random spread for wild mode
         const spreadRange = (mode.spread * Math.PI) / 180;
@@ -922,10 +934,17 @@ function spawnBullet() {
       const targetIndex = i % availableEnemies.length;
       targetEnemy = availableEnemies[targetIndex];
       
-      // Calculate initial angle toward target
-      const dx = targetEnemy.x - player.x;
-      const dy = targetEnemy.y - (player.y - player.h / 2);
-      angle = Math.atan2(dy, dx);
+      // For wide homing, start with spread then home in
+      // For regular homing, aim directly at target
+      if (mode.name === 'Wide Homing') {
+        // Keep the spread angle, bullets will home in via updateBullets
+        // This creates a wide initial spread that then converges
+      } else {
+        // Regular homing: calculate initial angle toward target
+        const dx = targetEnemy.x - player.x;
+        const dy = targetEnemy.y - (player.y - player.h / 2);
+        angle = Math.atan2(dy, dx);
+      }
     }
     
     const bullet = {
@@ -2365,6 +2384,7 @@ function handleKey(event, isDown) {
       'Digit6': 'rapidWide',
       'Digit7': 'overwhelming',
       'Digit8': 'homing',
+      'Digit9': 'wideHoming',
     };
     if (modeKeys[event.code]) {
       player.fireMode = modeKeys[event.code];
