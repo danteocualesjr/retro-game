@@ -579,11 +579,6 @@ const player = {
   fireMode: 'normal', // Current fire mode
   shield: {
     active: false,
-    duration: 0,
-    maxDuration: 3.0, // Shield lasts 3 seconds
-    cooldown: 0,
-    maxCooldown: 8.0, // 8 second cooldown between uses
-    energy: 100, // Shield energy (percentage)
   },
 };
 
@@ -629,9 +624,7 @@ function resetGame() {
   player.cooldown = 0;
   player.fireMode = 'normal';
   player.shield.active = false;
-  player.shield.duration = 0;
-  player.shield.cooldown = 0;
-  player.shield.energy = 100;
+  player.shield.shieldKeyPressed = false;
   spawnTimer = 0;
   spawnInterval = 1.35;
   bullets.length = 0;
@@ -813,20 +806,13 @@ function updateHud() {
   if (shieldEl) {
     const s = player.shield;
     if (s.active) {
-      const timeLeft = Math.ceil(s.duration);
-      shieldEl.textContent = `🛡️ ${timeLeft}s`;
+      shieldEl.textContent = '🛡️ ON';
       shieldEl.style.color = '#37d6ff';
       shieldEl.style.textShadow = '0 0 8px rgba(55, 214, 255, 0.8)';
-    } else if (s.cooldown > 0) {
-      const cooldownLeft = Math.ceil(s.cooldown);
-      shieldEl.textContent = `🛡️ ${cooldownLeft}s`;
+    } else {
+      shieldEl.textContent = '🛡️ OFF';
       shieldEl.style.color = '#888';
       shieldEl.style.textShadow = 'none';
-    } else {
-      const energyPercent = Math.ceil(s.energy);
-      shieldEl.textContent = `🛡️ ${energyPercent}%`;
-      shieldEl.style.color = energyPercent > 50 ? '#00ff88' : energyPercent > 25 ? '#ffaa00' : '#ff5b4d';
-      shieldEl.style.textShadow = '0 0 4px rgba(0, 255, 136, 0.6)';
     }
   }
 }
@@ -872,35 +858,23 @@ function handleInput(dt) {
     player.cooldown = mode.cooldown;
   }
   
-  // Shield management
+  // Shield toggle management - permanent toggle
   const s = player.shield;
-  if (s.cooldown > 0) s.cooldown -= dt;
   
-  // Activate shield
-  if (inputs.shield && !s.active && s.cooldown <= 0 && s.energy > 0) {
-    s.active = true;
-    s.duration = s.maxDuration;
-    sounds.shieldActivate();
-  }
-  
-  // Update shield duration and energy drain
-  if (s.active) {
-    s.duration -= dt;
-    s.energy -= dt * (100 / s.maxDuration); // Drain energy over duration
-    
-    if (s.duration <= 0 || s.energy <= 0) {
-      s.active = false;
-      s.duration = 0;
-      if (s.energy <= 0) {
-        s.cooldown = s.maxCooldown; // Full cooldown if energy depleted
-      }
+  // Toggle shield on/off when Shift is first pressed (not held)
+  if (inputs.shield && !s.shieldKeyPressed) {
+    s.active = !s.active;
+    s.shieldKeyPressed = true;
+    if (s.active) {
+      sounds.shieldActivate();
+    } else {
       sounds.shieldDeactivate();
     }
   }
   
-  // Regenerate shield energy when not active and not on cooldown
-  if (!s.active && s.cooldown <= 0 && s.energy < 100) {
-    s.energy = Math.min(100, s.energy + dt * 10); // Regenerate 10% per second
+  // Reset flag when Shift is released to allow toggling again
+  if (!inputs.shield) {
+    s.shieldKeyPressed = false;
   }
 }
 
