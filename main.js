@@ -623,6 +623,8 @@ const bombs = []; // Boss bombs
 const enemies = [];
 const particles = [];
 const stars = []; // Will be initialized when canvas is ready
+const bodyguards = []; // Player's bodyguard spaceships
+const bodyguardBullets = []; // Bullets fired by bodyguards
 
 let spawnTimer = 0;
 let spawnInterval = 1.35;
@@ -641,6 +643,7 @@ function resetGame() {
   state.level = 1;
   state.enemiesKilled = 0;
   state.bossSpawned = false;
+  state.bodyguardsActive = false;
   state.highScore = getHighScore(); // Refresh high score from storage
   player.x = canvas.width / 2;
   player.y = canvas.height - 90;
@@ -656,6 +659,8 @@ function resetGame() {
   bombs.length = 0;
   enemies.length = 0;
   particles.length = 0;
+  bodyguards.length = 0;
+  bodyguardBullets.length = 0;
   
   // Initialize stars if not already done or if array is empty
   if (stars.length === 0 && canvas && canvas.width && canvas.height) {
@@ -860,6 +865,8 @@ function update(dt) {
   updateEnemyBullets(dt);
   updateBombs(dt);
   updateEnemies(dt);
+  updateBodyguards(dt);
+  updateBodyguardBullets(dt);
   updateParticles(dt);
   checkCollisions();
   maybeIncreaseWave();
@@ -1386,6 +1393,173 @@ function updateStars(dt) {
   }
 }
 
+// Bodyguard functions
+function spawnBodyguards() {
+  if (state.bodyguardsActive || bodyguards.length > 0) return;
+  
+  state.bodyguardsActive = true;
+  
+  // Create two bodyguards - one on each side of player
+  bodyguards.push({
+    x: player.x - 60,
+    y: player.y,
+    w: 28,
+    h: 22,
+    offsetX: -60, // Offset from player
+    offsetY: 0,
+    cooldown: 0,
+    shootInterval: 0.3, // Shoot every 0.3 seconds
+  });
+  
+  bodyguards.push({
+    x: player.x + 60,
+    y: player.y,
+    w: 28,
+    h: 22,
+    offsetX: 60, // Offset from player
+    offsetY: 0,
+    cooldown: 0,
+    shootInterval: 0.3,
+  });
+  
+  sounds.shieldActivate(); // Use shield sound for bodyguard spawn
+}
+
+function despawnBodyguards() {
+  state.bodyguardsActive = false;
+  bodyguards.length = 0;
+  bodyguardBullets.length = 0;
+  sounds.shieldDeactivate(); // Use shield sound for bodyguard despawn
+}
+
+function updateBodyguards(dt) {
+  if (!state.bodyguardsActive) return;
+  
+  // Update bodyguard positions to follow player
+  for (let i = 0; i < bodyguards.length; i++) {
+    const bg = bodyguards[i];
+    
+    // Calculate target position relative to player
+    const targetX = player.x + bg.offsetX;
+    const targetY = player.y + bg.offsetY;
+    
+    // Smoothly move toward target position
+    const dx = targetX - bg.x;
+    const dy = targetY - bg.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    
+    if (distance > 2) {
+      const speed = 400; // Movement speed
+      bg.x += (dx / distance) * speed * dt;
+      bg.y += (dy / distance) * speed * dt;
+    } else {
+      bg.x = targetX;
+      bg.y = targetY;
+    }
+    
+    // Keep bodyguards on screen
+    bg.x = Math.max(bg.w / 2, Math.min(canvas.width - bg.w / 2, bg.x));
+    bg.y = Math.max(bg.h / 2, Math.min(canvas.height - bg.h / 2, bg.y));
+    
+    // Bodyguard shooting logic
+    bg.cooldown -= dt;
+    if (bg.cooldown <= 0) {
+      // Find nearest enemy to shoot at
+      let nearestEnemy = null;
+      let nearestDist = Infinity;
+      
+      for (const enemy of enemies) {
+        if (enemy.isBoss) continue; // Don't target bosses
+        const dist = Math.sqrt(
+          Math.pow(bg.x - enemy.x, 2) + Math.pow(bg.y - enemy.y, 2)
+        );
+        if (dist < nearestDist && enemy.y < canvas.height) {
+          nearestDist = dist;
+          nearestEnemy = enemy;
+        }
+      }
+      
+      if (nearestEnemy) {
+        // Shoot at nearest enemy
+        const dx = nearestEnemy.x - bg.x;
+        const dy = nearestEnemy.y - bg.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const speed = 500;
+        
+        bodyguardBullets.push({
+          x: bg.x,
+          y: bg.y - bg.h / 2,
+          w: 5,
+          h: 12,
+          vx: (dx / dist) * speed,
+          vy: (dy / dist) * speed,
+          color: '#00ff88',
+          damage: 1,
+        });
+        
+        sounds.shoot();
+        bg.cooldown = bg.shootInterval;
+      }
+    }
+  }
+}
+
+function updateBodyguardBullets(dt) {
+  for (let i = bodyguardBullets.length - 1; i >= 0; i -= 1) {
+    const b = bodyguardBullets[i];
+    b.x += b.vx * dt;
+    b.y += b.vy * dt;
+    
+    // Remove if off screen
+    if (b.y + b.h < 0 || b.x < -b.w || b.x > canvas.width + b.w || b.y > canvas.height + b.h) {
+      bodyguardBullets.splice(i, 1);
+    }
+  }
+}
+
+function drawBodyguards() {
+  for (const bg of bodyguards) {
+    ctx.save();
+    ctx.translate(bg.x, bg.y);
+    
+    // Draw smaller X-wing style bodyguard
+    // Body
+    ctx.fillStyle = '#88ff88';
+    ctx.fillRect(-bg.w / 2, -bg.h / 2, bg.w, bg.h);
+    
+    // Cockpit
+    ctx.fillStyle = '#00ff88';
+    ctx.fillRect(-bg.w / 2 + 3, -bg.h / 2 + 3, bg.w - 6, bg.h * 0.4);
+    
+    // Wings (smaller)
+    const wingLength = bg.w * 0.5;
+    const wingWidth = 3;
+    ctx.fillStyle = '#88ff88';
+    ctx.fillRect(-bg.w / 2 - wingLength, -bg.h / 2 - wingWidth, wingLength, wingWidth);
+    ctx.fillRect(bg.w / 2, -bg.h / 2 - wingWidth, wingLength, wingWidth);
+    ctx.fillRect(-bg.w / 2 - wingLength, bg.h / 2, wingLength, wingWidth);
+    ctx.fillRect(bg.w / 2, bg.h / 2, wingLength, wingWidth);
+    
+    // Engine glow
+    ctx.fillStyle = '#00ff88';
+    ctx.fillRect(-bg.w / 2 + 2, bg.h / 2, bg.w - 4, 4);
+    
+    ctx.restore();
+  }
+}
+
+function drawBodyguardBullets() {
+  for (const b of bodyguardBullets) {
+    ctx.save();
+    ctx.fillStyle = b.color || '#00ff88';
+    ctx.shadowBlur = 6;
+    ctx.shadowColor = b.color || '#00ff88';
+    ctx.fillRect(b.x - b.w / 2, b.y - b.h / 2, b.w, b.h);
+    ctx.shadowBlur = 0;
+    ctx.restore();
+  }
+}
+
 function checkCollisions() {
   // Bullet vs enemy
   for (let i = enemies.length - 1; i >= 0; i -= 1) {
@@ -1415,6 +1589,45 @@ function checkCollisions() {
           if (wasBoss) {
             sounds.bossDefeat();
             // Advance to next level after a short delay
+            setTimeout(() => {
+              if (state.running) advanceLevel();
+            }, 1000);
+          } else {
+            sounds.explosion();
+          }
+        }
+        break;
+      }
+    }
+  }
+  
+  // Bodyguard bullets vs enemy
+  for (let i = enemies.length - 1; i >= 0; i -= 1) {
+    const e = enemies[i];
+    for (let j = bodyguardBullets.length - 1; j >= 0; j -= 1) {
+      const b = bodyguardBullets[j];
+      if (rectsIntersect(e, b)) {
+        bodyguardBullets.splice(j, 1);
+        const damage = b.damage || 1;
+        e.hp -= damage;
+        spawnHitParticles(e.x, e.y, b.color || '#00ff88');
+        if (e.hp <= 0) {
+          const wasBoss = e.isBoss;
+          enemies.splice(i, 1);
+          state.score += e.points || 10;
+          state.enemiesKilled += 1;
+          
+          // Update high score if needed
+          if (state.score > state.highScore) {
+            state.highScore = state.score;
+            saveHighScore(state.highScore);
+          }
+          
+          spawnHitParticles(e.x, e.y, '#ff5b4d', wasBoss ? 30 : 14);
+          
+          // Play appropriate sound
+          if (wasBoss) {
+            sounds.bossDefeat();
             setTimeout(() => {
               if (state.running) advanceLevel();
             }, 1000);
@@ -1536,7 +1749,9 @@ function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   drawStars();
   drawPlayer();
+  drawBodyguards();
   drawBullets();
+  drawBodyguardBullets();
   drawEnemyBullets();
   drawBombs();
   drawEnemies();
@@ -2373,7 +2588,7 @@ function handleKey(event, isDown) {
     if (!state.running) startGame();
   }
   
-  // Fire mode switching (1-8 keys)
+  // Fire mode switching (1-9 keys)
   if (isDown && state.running) {
     const modeKeys = {
       'Digit1': 'normal',
@@ -2391,6 +2606,16 @@ function handleKey(event, isDown) {
       updateHud();
       event.preventDefault();
     }
+  }
+  
+  // Toggle bodyguards with key 0 (Digit0)
+  if (event.code === 'Digit0' && isDown && state.running) {
+    if (!state.bodyguardsActive) {
+      spawnBodyguards();
+    } else {
+      despawnBodyguards();
+    }
+    event.preventDefault();
   }
 }
 

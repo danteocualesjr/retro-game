@@ -41,7 +41,7 @@
         <div class="panel">
           <div class="panel-glow"></div>
           <h1 id="overlay-title">Retro Star Defender</h1>
-          <p id="overlay-message">Move with Arrow Keys or WASD. Shoot with Space. Hold Shift to activate shield. Press 1-9 to change fire mode (8 = Homing, 9 = Wide Homing). Press Enter to start.</p>
+          <p id="overlay-message">Move with Arrow Keys or WASD. Shoot with Space. Hold Shift to activate shield. Press 1-9 to change fire mode. Press 0 to toggle bodyguards. Press Enter to start.</p>
           <button id="start-btn" type="button" onclick="if (typeof startGame === 'function') { startGame(); } else { console.error('startGame function not found'); }">
             <span class="btn-text">Start</span>
             <span class="btn-glow"></span>
@@ -56,6 +56,7 @@
         <span>Shoot: Space</span>
         <span>Shield: Shift</span>
         <span>Fire Mode: 1-9</span>
+        <span>Bodyguards: 0</span>
         <span>Restart: Enter</span>
       </div>
       <div class="credit">Built for you &middot; Pure HTML + JS Canvas</div>
