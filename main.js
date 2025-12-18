@@ -1400,7 +1400,7 @@ function drawPlayer() {
   
   // Draw shield if active
   if (player.shield.active) {
-    const shieldSize = Math.max(player.w, player.h) * 1.8;
+    const shieldSize = Math.max(player.w, player.h) * 3.0; // Wider shield
     const shieldAlpha = 0.4 + (Math.sin(Date.now() / 100) * 0.2);
     
     // Outer shield glow
