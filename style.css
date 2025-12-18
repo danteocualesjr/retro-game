@@ -141,9 +141,9 @@ body::before {
 
 .top-bar {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
   padding: 10px 14px;
   background: 
     linear-gradient(90deg, #0f152b 0%, #0a0f1d 50%, #0f152b 100%),
@@ -156,12 +156,31 @@ body::before {
     0 0 24px rgba(45, 158, 255, 0.3);
   flex-wrap: nowrap;
   overflow-x: auto;
+  overflow-y: hidden;
   min-width: 0;
   position: relative;
   box-shadow: 
     inset 0 1px 0 rgba(55, 214, 255, 0.3),
     0 2px 10px rgba(0, 0, 0, 0.5),
     0 0 20px rgba(45, 158, 255, 0.2);
+}
+
+.top-bar::-webkit-scrollbar {
+  height: 4px;
+}
+
+.top-bar::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 2px;
+}
+
+.top-bar::-webkit-scrollbar-thumb {
+  background: rgba(55, 214, 255, 0.5);
+  border-radius: 2px;
+}
+
+.top-bar::-webkit-scrollbar-thumb:hover {
+  background: rgba(55, 214, 255, 0.7);
 }
 
 .title {
@@ -181,6 +200,7 @@ body::before {
   flex-shrink: 0;
   white-space: nowrap;
   overflow: visible;
+  margin-right: 8px;
 }
 
 @keyframes titleGlow {
@@ -194,13 +214,14 @@ body::before {
 
 .controls-legend {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   font-size: 8px;
   color: #90e0ff;
-  flex-shrink: 0;
+  flex-shrink: 1;
   flex-wrap: nowrap;
   align-items: center;
   white-space: nowrap;
+  min-width: 0;
 }
 
 .controls-legend span {
@@ -212,6 +233,8 @@ body::before {
   transition: all 0.3s ease;
   white-space: nowrap;
   flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
 }
 
 .controls-legend span:hover {
@@ -222,12 +245,14 @@ body::before {
 
 .hud {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   font-size: 9px;
-  flex-shrink: 0;
+  flex-shrink: 1;
   flex-wrap: nowrap;
   align-items: center;
   white-space: nowrap;
+  min-width: 0;
+  margin-left: auto;
 }
 
 .hud span {
