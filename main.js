@@ -1,5 +1,5 @@
 // Get DOM elements - will be set when DOM is ready
-let canvas, ctx, overlay, overlayTitle, overlayMessage, startBtn, soundToggleBtn;
+let canvas, ctx, overlay, overlayTitle, overlayMessage, startBtn, soundToggleBtn, pauseToggleBtn;
 let scoreEl, waveEl, levelEl, livesEl, highScoreEl, fireModeEl, shieldEl;
 
 function initDOM() {
@@ -41,6 +41,7 @@ function initDOM() {
   overlayMessage = document.getElementById('overlay-message');
   startBtn = document.getElementById('start-btn');
   soundToggleBtn = document.getElementById('sound-toggle');
+  pauseToggleBtn = document.getElementById('pause-toggle');
 
   scoreEl = document.getElementById('score');
   waveEl = document.getElementById('wave');
@@ -476,6 +477,7 @@ function saveHighScore(score) {
 const state = {
 
   running: false,
+  paused: false,
   gameOver: false,
   lastTime: 0,
   score: 0,
@@ -626,6 +628,7 @@ const particles = [];
 const stars = []; // Will be initialized when canvas is ready
 const bodyguards = []; // Player's bodyguard spaceships
 const bodyguardBullets = []; // Bullets fired by bodyguards
+const asteroids = []; // Floating asteroids
 
 let spawnTimer = 0;
 let spawnInterval = 1.35;
@@ -637,6 +640,7 @@ function resetGame() {
   }
 
   state.running = false;
+  state.paused = false;
   state.gameOver = false;
   state.lastTime = performance.now();
   state.score = 0;
@@ -662,6 +666,7 @@ function resetGame() {
   particles.length = 0;
   bodyguards.length = 0;
   bodyguardBullets.length = 0;
+  asteroids.length = 0;
   
   // Initialize stars if not already done or if array is empty
   if (stars.length === 0 && canvas && canvas.width && canvas.height) {
@@ -731,7 +736,17 @@ function startGame() {
       console.log('Stars initialized:', stars.length);
     }
     
+    // Initialize some asteroids
+    if (asteroids.length === 0 && canvas && canvas.width && canvas.height) {
+      console.log('Initializing asteroids...');
+      for (let i = 0; i < 4; i++) {
+        spawnAsteroid();
+      }
+      console.log('Asteroids initialized:', asteroids.length);
+    }
+    
     state.running = true;
+    state.paused = false;
     state.gameOver = false;
     
     // Hide overlay immediately
@@ -853,7 +868,9 @@ function loop(timestamp) {
   const dt = Math.min((timestamp - state.lastTime) / 1000, 0.033);
   state.lastTime = timestamp;
 
-  update(dt);
+  if (!state.paused) {
+    update(dt);
+  }
   draw();
   requestAnimationFrame(loop);
   
@@ -869,6 +886,7 @@ function update(dt) {
   updateBodyguards(dt);
   updateBodyguardBullets(dt);
   updateParticles(dt);
+  updateAsteroids(dt);
   checkCollisions();
   maybeIncreaseWave();
   updateHud();
@@ -1394,6 +1412,128 @@ function updateStars(dt) {
   }
 }
 
+// Asteroid functions
+function spawnAsteroid() {
+  const size = 20 + Math.random() * 30; // Random size between 20-50
+  const side = Math.floor(Math.random() * 4); // 0=top, 1=right, 2=bottom, 3=left
+  let x, y;
+  const speed = 30 + Math.random() * 50; // Random speed
+  const angle = Math.random() * Math.PI * 2; // Random direction
+  
+  switch (side) {
+    case 0: // Top
+      x = Math.random() * canvas.width;
+      y = -size;
+      break;
+    case 1: // Right
+      x = canvas.width + size;
+      y = Math.random() * canvas.height;
+      break;
+    case 2: // Bottom
+      x = Math.random() * canvas.width;
+      y = canvas.height + size;
+      break;
+    case 3: // Left
+      x = -size;
+      y = Math.random() * canvas.height;
+      break;
+  }
+  
+  asteroids.push({
+    x,
+    y,
+    size,
+    vx: Math.cos(angle) * speed,
+    vy: Math.sin(angle) * speed,
+    rotation: Math.random() * Math.PI * 2,
+    rotationSpeed: (Math.random() - 0.5) * 2, // Random rotation speed
+    shape: generateAsteroidShape(size), // Generate random shape
+  });
+}
+
+function generateAsteroidShape(size) {
+  // Generate a random polygon shape for the asteroid
+  const points = 6 + Math.floor(Math.random() * 4); // 6-9 points
+  const shape = [];
+  for (let i = 0; i < points; i++) {
+    const angle = (Math.PI * 2 * i) / points;
+    const radius = size * (0.7 + Math.random() * 0.3); // Vary radius for irregular shape
+    shape.push({
+      x: Math.cos(angle) * radius,
+      y: Math.sin(angle) * radius,
+    });
+  }
+  return shape;
+}
+
+function updateAsteroids(dt) {
+  // Spawn new asteroids occasionally
+  if (Math.random() < 0.01 * dt) { // Spawn chance per second
+    if (asteroids.length < 8) { // Max 8 asteroids at once
+      spawnAsteroid();
+    }
+  }
+  
+  for (let i = asteroids.length - 1; i >= 0; i--) {
+    const a = asteroids[i];
+    
+    // Update position
+    a.x += a.vx * dt;
+    a.y += a.vy * dt;
+    a.rotation += a.rotationSpeed * dt;
+    
+    // Wrap around screen edges
+    if (a.x < -a.size * 2) a.x = canvas.width + a.size;
+    if (a.x > canvas.width + a.size * 2) a.x = -a.size;
+    if (a.y < -a.size * 2) a.y = canvas.height + a.size;
+    if (a.y > canvas.height + a.size * 2) a.y = -a.size;
+  }
+}
+
+function drawAsteroids() {
+  for (const a of asteroids) {
+    ctx.save();
+    ctx.translate(a.x, a.y);
+    ctx.rotate(a.rotation);
+    
+    // Draw asteroid with rocky appearance
+    ctx.fillStyle = '#555555';
+    ctx.strokeStyle = '#333333';
+    ctx.lineWidth = 2;
+    
+    // Draw main shape
+    ctx.beginPath();
+    ctx.moveTo(a.shape[0].x, a.shape[0].y);
+    for (let i = 1; i < a.shape.length; i++) {
+      ctx.lineTo(a.shape[i].x, a.shape[i].y);
+    }
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    
+    // Add some detail lines for rocky texture
+    ctx.strokeStyle = '#444444';
+    ctx.lineWidth = 1;
+    for (let i = 0; i < a.shape.length; i++) {
+      const next = (i + 1) % a.shape.length;
+      if (Math.random() > 0.7) { // Random detail lines
+        ctx.beginPath();
+        ctx.moveTo(a.shape[i].x * 0.5, a.shape[i].y * 0.5);
+        ctx.lineTo(a.shape[next].x * 0.5, a.shape[next].y * 0.5);
+        ctx.stroke();
+      }
+    }
+    
+    // Add some highlights
+    ctx.fillStyle = '#777777';
+    ctx.beginPath();
+    ctx.arc(a.shape[0].x * 0.3, a.shape[0].y * 0.3, a.size * 0.1, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.restore();
+  }
+}
+
 // Bodyguard functions
 function spawnBodyguards() {
   if (state.bodyguardsActive || bodyguards.length > 0) {
@@ -1587,6 +1727,19 @@ function drawBodyguardBullets() {
 }
 
 function checkCollisions() {
+  // Bullet vs asteroid
+  for (let i = asteroids.length - 1; i >= 0; i -= 1) {
+    const a = asteroids[i];
+    for (let j = bullets.length - 1; j >= 0; j -= 1) {
+      const b = bullets[j];
+      if (circleRectIntersect(a, b)) {
+        bullets.splice(j, 1);
+        spawnHitParticles(b.x, b.y, b.color || '#ffea61', 8);
+        sounds.hit();
+      }
+    }
+  }
+  
   // Bullet vs enemy
   for (let i = enemies.length - 1; i >= 0; i -= 1) {
     const e = enemies[i];
@@ -1717,6 +1870,38 @@ function checkCollisions() {
       }
     }
   }
+  
+  // Asteroids vs player
+  for (let i = asteroids.length - 1; i >= 0; i -= 1) {
+    const a = asteroids[i];
+    if (circleRectIntersect(a, player)) {
+      if (player.shield.active) {
+        // Shield blocks the asteroid
+        spawnHitParticles(a.x, a.y, '#37d6ff', 12);
+        // Bounce asteroid away
+        const dx = a.x - player.x;
+        const dy = a.y - player.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist > 0) {
+          a.vx += (dx / dist) * 100;
+          a.vy += (dy / dist) * 100;
+        }
+        sounds.shieldBlock();
+      } else {
+        spawnHitParticles(player.x, player.y, '#888888', 16);
+        sounds.playerHit();
+        loseLife();
+        // Bounce asteroid away
+        const dx = a.x - player.x;
+        const dy = a.y - player.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist > 0) {
+          a.vx += (dx / dist) * 150;
+          a.vy += (dy / dist) * 150;
+        }
+      }
+    }
+  }
 }
 
 function loseLife() {
@@ -1774,6 +1959,7 @@ function draw() {
   }
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   drawStars();
+  drawAsteroids();
   drawPlayer();
   drawBodyguards();
   drawBullets();
@@ -1782,6 +1968,20 @@ function draw() {
   drawBombs();
   drawEnemies();
   drawParticles();
+  
+  // Draw pause overlay if paused
+  if (state.paused && state.running) {
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#37d6ff';
+    ctx.font = '32px "Press Start 2P"';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.shadowBlur = 20;
+    ctx.shadowColor = '#37d6ff';
+    ctx.fillText('PAUSED', canvas.width / 2, canvas.height / 2);
+    ctx.shadowBlur = 0;
+  }
 }
 
 function drawStars() {
@@ -2593,6 +2793,15 @@ function rectsIntersect(a, b) {
   return Math.abs(a.x - b.x) * 2 < a.w + b.w && Math.abs(a.y - b.y) * 2 < a.h + b.h;
 }
 
+function circleRectIntersect(circle, rect) {
+  // Check if circle (asteroid) intersects with rectangle (player/bullet)
+  const closestX = Math.max(rect.x - rect.w / 2, Math.min(circle.x, rect.x + rect.w / 2));
+  const closestY = Math.max(rect.y - rect.h / 2, Math.min(circle.y, rect.y + rect.h / 2));
+  const dx = circle.x - closestX;
+  const dy = circle.y - closestY;
+  return (dx * dx + dy * dy) < (circle.size * circle.size);
+}
+
 function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max);
 }
@@ -2612,6 +2821,24 @@ function handleKey(event, isDown) {
   }
   if (event.code === 'Enter' && isDown) {
     if (!state.running) startGame();
+  }
+  if (event.code === 'KeyP' && isDown && state.running) {
+    // Toggle pause with P key
+    state.paused = !state.paused;
+    if (pauseToggleBtn) {
+      if (state.paused) {
+        pauseToggleBtn.textContent = '▶️';
+        pauseToggleBtn.title = 'Resume';
+        stopBackgroundMusic();
+      } else {
+        pauseToggleBtn.textContent = '⏸️';
+        pauseToggleBtn.title = 'Pause';
+        if (soundEnabled) {
+          startBackgroundMusic();
+        }
+      }
+    }
+    event.preventDefault();
   }
   
   // Fire mode switching (1-9 keys)
@@ -2724,6 +2951,27 @@ function initializeGame() {
     console.error('Start button not found!');
   }
 
+  // Pause toggle functionality
+  if (pauseToggleBtn) {
+    pauseToggleBtn.addEventListener('click', () => {
+      if (!state.running) return;
+      
+      state.paused = !state.paused;
+      
+      if (state.paused) {
+        pauseToggleBtn.textContent = '▶️';
+        pauseToggleBtn.title = 'Resume';
+        stopBackgroundMusic();
+      } else {
+        pauseToggleBtn.textContent = '⏸️';
+        pauseToggleBtn.title = 'Pause';
+        if (soundEnabled) {
+          startBackgroundMusic();
+        }
+      }
+    });
+  }
+  
   // Sound toggle functionality
   if (soundToggleBtn) {
     soundToggleBtn.addEventListener('click', () => {
