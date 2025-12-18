@@ -993,7 +993,7 @@ function spawnBossBomb(boss) {
 function updateEnemies(dt) {
   // Spawn boss when enough enemies are killed for current level
   // Each level requires different number of enemies before boss appears
-  const enemiesNeededForBoss = [15, 20, 25, 30, 35][state.level - 1] || 35;
+  const enemiesNeededForBoss = [15, 20, 25, 30, 35, 40, 45, 50, 55, 60][state.level - 1] || 60;
   
   // Check if we should spawn boss (enough enemies killed AND no regular enemies left)
   const hasBoss = enemies.some(e => e.isBoss);
@@ -1125,8 +1125,55 @@ function spawnEnemy() {
         enemyType = 4; // TIE Defender
       }
       break;
+    case 6:
+      // Level 6: Mostly TIE Advanced and TIE Defender
+      if (typeChance < 0.3) {
+        enemyType = 3; // TIE Advanced
+      } else if (typeChance < 0.6) {
+        enemyType = 4; // TIE Defender
+      } else if (typeChance < 0.8) {
+        enemyType = 2; // TIE Bomber
+      } else {
+        enemyType = 1; // TIE Interceptor
+      }
+      break;
+    case 7:
+      // Level 7: Heavy on TIE Defender
+      if (typeChance < 0.5) {
+        enemyType = 4; // TIE Defender
+      } else if (typeChance < 0.75) {
+        enemyType = 3; // TIE Advanced
+      } else {
+        enemyType = 2; // TIE Bomber
+      }
+      break;
+    case 8:
+      // Level 8: Elite mix - mostly TIE Defender
+      if (typeChance < 0.6) {
+        enemyType = 4; // TIE Defender
+      } else if (typeChance < 0.85) {
+        enemyType = 3; // TIE Advanced
+      } else {
+        enemyType = 2; // TIE Bomber
+      }
+      break;
+    case 9:
+      // Level 9: Almost all TIE Defender
+      if (typeChance < 0.75) {
+        enemyType = 4; // TIE Defender
+      } else if (typeChance < 0.9) {
+        enemyType = 3; // TIE Advanced
+      } else {
+        enemyType = 2; // TIE Bomber
+      }
+      break;
+    case 10:
+      // Level 10: Ultimate challenge - all TIE Defender
+      enemyType = 4; // TIE Defender only
+      break;
     default:
-      enemyType = 0;
+      // For levels beyond 10, use level 10 distribution
+      enemyType = 4;
   }
   
   let w, h, hp, points, speed;
@@ -1342,9 +1389,9 @@ function maybeIncreaseWave() {
 }
 
 function advanceLevel() {
-  if (state.level >= 5) {
+  if (state.level >= 10) {
     // Game complete!
-    showOverlay('Victory!', `You've completed all 5 levels! Final Score: ${state.score}. Press Enter to play again.`);
+    showOverlay('Victory!', `You've completed all 10 levels! Final Score: ${state.score}. Press Enter to play again.`);
     state.running = false;
     return;
   }
@@ -1540,9 +1587,40 @@ function getLevelColors(level) {
       stroke: '#773333',
       accent: '#994444',
     },
+    6: { // Level 6 - Cyan/blue
+      pod: '#225555',
+      panel: '#113333',
+      stroke: '#337777',
+      accent: '#449999',
+    },
+    7: { // Level 7 - Green tint
+      pod: '#335522',
+      panel: '#223311',
+      stroke: '#557733',
+      accent: '#779944',
+    },
+    8: { // Level 8 - Yellow/gold
+      pod: '#555522',
+      panel: '#333311',
+      stroke: '#777733',
+      accent: '#999944',
+    },
+    9: { // Level 9 - Orange/red intense
+      pod: '#772222',
+      panel: '#551111',
+      stroke: '#994444',
+      accent: '#bb6666',
+    },
+    10: { // Level 10 - Final boss - Dark purple/red
+      pod: '#661133',
+      panel: '#440011',
+      stroke: '#882244',
+      accent: '#aa3366',
+    },
   };
   
-  return colorSchemes[level] || colorSchemes[1];
+  // For levels beyond 10, cycle through colors or use level 10
+  return colorSchemes[level] || colorSchemes[Math.min(level, 10)] || colorSchemes[10];
 }
 
 function drawEnemies() {
