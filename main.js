@@ -1411,7 +1411,7 @@ function spawnBodyguards() {
     w: 28,
     h: 22,
     cooldown: 0,
-    shootInterval: 0.3, // Shoot every 0.3 seconds
+    shootInterval: 0.15, // Rapid fire - shoot every 0.15 seconds
     patrolPhase: 0, // Start at different phases for variety
   });
   
@@ -1479,7 +1479,7 @@ function updateBodyguards(dt) {
     bg.x = Math.max(bg.w / 2, Math.min(canvas.width - bg.w / 2, bg.x));
     bg.y = Math.max(bg.h / 2, Math.min(canvas.height - bg.h / 2, bg.y));
     
-    // Bodyguard shooting logic
+    // Bodyguard shooting logic - Wide rapid fire
     bg.cooldown -= dt;
     if (bg.cooldown <= 0) {
       // Find nearest enemy to shoot at
@@ -1498,22 +1498,30 @@ function updateBodyguards(dt) {
       }
       
       if (nearestEnemy) {
-        // Shoot at nearest enemy
+        // Wide rapid fire - shoot 4 bullets in a spread pattern
         const dx = nearestEnemy.x - bg.x;
         const dy = nearestEnemy.y - bg.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
+        const baseAngle = Math.atan2(dy, dx);
+        const spreadAngle = 20 * (Math.PI / 180); // 20 degree spread
+        const bulletCount = 4;
         const speed = 500;
         
-        bodyguardBullets.push({
-          x: bg.x,
-          y: bg.y - bg.h / 2,
-          w: 5,
-          h: 12,
-          vx: (dx / dist) * speed,
-          vy: (dy / dist) * speed,
-          color: '#00ff88',
-          damage: 1,
-        });
+        for (let i = 0; i < bulletCount; i++) {
+          // Calculate spread offset
+          const offset = (i - (bulletCount - 1) / 2) * (spreadAngle / (bulletCount - 1));
+          const angle = baseAngle + offset;
+          
+          bodyguardBullets.push({
+            x: bg.x,
+            y: bg.y - bg.h / 2,
+            w: 4,
+            h: 10,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+            color: '#00ff88',
+            damage: 1,
+          });
+        }
         
         sounds.shoot();
         bg.cooldown = bg.shootInterval;
