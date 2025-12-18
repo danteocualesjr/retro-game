@@ -1,6 +1,6 @@
 // Get DOM elements - will be set when DOM is ready
 let canvas, ctx, overlay, overlayTitle, overlayMessage, startBtn, soundToggleBtn;
-let scoreEl, waveEl, levelEl, livesEl, highScoreEl, fireModeEl;
+let scoreEl, waveEl, levelEl, livesEl, highScoreEl, fireModeEl, shieldEl;
 
 function initDOM() {
   console.log('initDOM called, document.readyState:', document.readyState);
@@ -48,6 +48,7 @@ function initDOM() {
   livesEl = document.getElementById('lives');
   highScoreEl = document.getElementById('high-score');
   fireModeEl = document.getElementById('fire-mode');
+  shieldEl = document.getElementById('shield');
   
   console.log('Elements found:', {
     overlay: !!overlay,
@@ -309,6 +310,82 @@ const sounds = {
 
     osc.start(audioCtx.currentTime);
     osc.stop(audioCtx.currentTime + 0.2);
+  },
+
+  // Shield activate sound (energizing, protective)
+  shieldActivate() {
+    if (!audioCtx || !soundEnabled) return;
+    const osc1 = audioCtx.createOscillator();
+    const osc2 = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    
+    osc1.connect(gain);
+    osc2.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    osc1.type = 'sine';
+    osc2.type = 'triangle';
+    // Rising, protective tone
+    osc1.frequency.setValueAtTime(200, audioCtx.currentTime);
+    osc1.frequency.exponentialRampToValueAtTime(400, audioCtx.currentTime + 0.3);
+    osc2.frequency.setValueAtTime(300, audioCtx.currentTime);
+    osc2.frequency.exponentialRampToValueAtTime(500, audioCtx.currentTime + 0.3);
+
+    gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+
+    osc1.start(audioCtx.currentTime);
+    osc2.start(audioCtx.currentTime);
+    osc1.stop(audioCtx.currentTime + 0.3);
+    osc2.stop(audioCtx.currentTime + 0.3);
+  },
+
+  // Shield deactivate sound (fading energy)
+  shieldDeactivate() {
+    if (!audioCtx || !soundEnabled) return;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    osc.type = 'sine';
+    // Fading tone
+    osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(150, audioCtx.currentTime + 0.2);
+
+    gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+
+    osc.start(audioCtx.currentTime);
+    osc.stop(audioCtx.currentTime + 0.2);
+  },
+
+  // Shield block sound (deflection)
+  shieldBlock() {
+    if (!audioCtx || !soundEnabled) return;
+    const osc1 = audioCtx.createOscillator();
+    const osc2 = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    
+    osc1.connect(gain);
+    osc2.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    osc1.type = 'sine';
+    osc2.type = 'triangle';
+    // Sharp, metallic deflection sound
+    osc1.frequency.setValueAtTime(600, audioCtx.currentTime);
+    osc1.frequency.exponentialRampToValueAtTime(400, audioCtx.currentTime + 0.1);
+    osc2.frequency.setValueAtTime(800, audioCtx.currentTime);
+    osc2.frequency.exponentialRampToValueAtTime(500, audioCtx.currentTime + 0.1);
+
+    gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+
+    osc1.start(audioCtx.currentTime);
+    osc2.start(audioCtx.currentTime);
+    osc1.stop(audioCtx.currentTime + 0.1);
+    osc2.stop(audioCtx.currentTime + 0.1);
   }
 };
 
@@ -500,6 +577,14 @@ const player = {
   cooldown: 0,
   lives: 3,
   fireMode: 'normal', // Current fire mode
+  shield: {
+    active: false,
+    duration: 0,
+    maxDuration: 3.0, // Shield lasts 3 seconds
+    cooldown: 0,
+    maxCooldown: 8.0, // 8 second cooldown between uses
+    energy: 100, // Shield energy (percentage)
+  },
 };
 
 const inputs = {
@@ -509,6 +594,7 @@ const inputs = {
   up: false,
   down: false,
   shoot: false,
+  shield: false,
   
 };
 
@@ -542,6 +628,10 @@ function resetGame() {
   player.lives = 3;
   player.cooldown = 0;
   player.fireMode = 'normal';
+  player.shield.active = false;
+  player.shield.duration = 0;
+  player.shield.cooldown = 0;
+  player.shield.energy = 100;
   spawnTimer = 0;
   spawnInterval = 1.35;
   bullets.length = 0;
@@ -718,6 +808,27 @@ function updateHud() {
     fireModeEl.textContent = mode.name;
     fireModeEl.style.color = mode.bulletColor;
   }
+  
+  // Update shield display
+  if (shieldEl) {
+    const s = player.shield;
+    if (s.active) {
+      const timeLeft = Math.ceil(s.duration);
+      shieldEl.textContent = `🛡️ ${timeLeft}s`;
+      shieldEl.style.color = '#37d6ff';
+      shieldEl.style.textShadow = '0 0 8px rgba(55, 214, 255, 0.8)';
+    } else if (s.cooldown > 0) {
+      const cooldownLeft = Math.ceil(s.cooldown);
+      shieldEl.textContent = `🛡️ ${cooldownLeft}s`;
+      shieldEl.style.color = '#888';
+      shieldEl.style.textShadow = 'none';
+    } else {
+      const energyPercent = Math.ceil(s.energy);
+      shieldEl.textContent = `🛡️ ${energyPercent}%`;
+      shieldEl.style.color = energyPercent > 50 ? '#00ff88' : energyPercent > 25 ? '#ffaa00' : '#ff5b4d';
+      shieldEl.style.textShadow = '0 0 4px rgba(0, 255, 136, 0.6)';
+    }
+  }
 }
 
 function loop(timestamp) {
@@ -759,6 +870,37 @@ function handleInput(dt) {
   if (inputs.shoot && player.cooldown <= 0) {
     spawnBullet();
     player.cooldown = mode.cooldown;
+  }
+  
+  // Shield management
+  const s = player.shield;
+  if (s.cooldown > 0) s.cooldown -= dt;
+  
+  // Activate shield
+  if (inputs.shield && !s.active && s.cooldown <= 0 && s.energy > 0) {
+    s.active = true;
+    s.duration = s.maxDuration;
+    sounds.shieldActivate();
+  }
+  
+  // Update shield duration and energy drain
+  if (s.active) {
+    s.duration -= dt;
+    s.energy -= dt * (100 / s.maxDuration); // Drain energy over duration
+    
+    if (s.duration <= 0 || s.energy <= 0) {
+      s.active = false;
+      s.duration = 0;
+      if (s.energy <= 0) {
+        s.cooldown = s.maxCooldown; // Full cooldown if energy depleted
+      }
+      sounds.shieldDeactivate();
+    }
+  }
+  
+  // Regenerate shield energy when not active and not on cooldown
+  if (!s.active && s.cooldown <= 0 && s.energy < 100) {
+    s.energy = Math.min(100, s.energy + dt * 10); // Regenerate 10% per second
   }
 }
 
@@ -1156,9 +1298,16 @@ function checkCollisions() {
   // Enemy vs player
   for (let i = enemies.length - 1; i >= 0; i -= 1) {
     if (rectsIntersect(enemies[i], player)) {
-      spawnHitParticles(player.x, player.y, '#ff5b4d', 16);
-      enemies.splice(i, 1);
-      loseLife();
+      if (player.shield.active) {
+        // Shield blocks the hit
+        spawnHitParticles(player.x, player.y, '#37d6ff', 12);
+        enemies.splice(i, 1);
+        sounds.shieldBlock();
+      } else {
+        spawnHitParticles(player.x, player.y, '#ff5b4d', 16);
+        enemies.splice(i, 1);
+        loseLife();
+      }
     }
   }
   
@@ -1166,10 +1315,17 @@ function checkCollisions() {
   for (let i = enemyBullets.length - 1; i >= 0; i -= 1) {
     const b = enemyBullets[i];
     if (rectsIntersect(b, player)) {
-      enemyBullets.splice(i, 1);
-      spawnHitParticles(player.x, player.y, '#ff5b4d', 12);
-      sounds.playerHit();
-      loseLife();
+      if (player.shield.active) {
+        // Shield blocks the bullet
+        spawnHitParticles(b.x, b.y, '#37d6ff', 8);
+        enemyBullets.splice(i, 1);
+        sounds.shieldBlock();
+      } else {
+        enemyBullets.splice(i, 1);
+        spawnHitParticles(player.x, player.y, '#ff5b4d', 12);
+        sounds.playerHit();
+        loseLife();
+      }
     }
   }
   
@@ -1177,10 +1333,17 @@ function checkCollisions() {
   for (let i = bombs.length - 1; i >= 0; i -= 1) {
     const bomb = bombs[i];
     if (rectsIntersect(bomb, player)) {
-      bombs.splice(i, 1);
-      spawnHitParticles(player.x, player.y, '#ffaa00', 20);
-      sounds.explosion();
-      loseLife();
+      if (player.shield.active) {
+        // Shield blocks the bomb
+        spawnHitParticles(bomb.x, bomb.y, '#37d6ff', 15);
+        bombs.splice(i, 1);
+        sounds.shieldBlock();
+      } else {
+        bombs.splice(i, 1);
+        spawnHitParticles(player.x, player.y, '#ffaa00', 20);
+        sounds.explosion();
+        loseLife();
+      }
     }
   }
 }
@@ -1260,6 +1423,31 @@ function drawStars() {
 function drawPlayer() {
   ctx.save();
   ctx.translate(player.x, player.y);
+  
+  // Draw shield if active
+  if (player.shield.active) {
+    const shieldSize = Math.max(player.w, player.h) * 1.8;
+    const shieldAlpha = 0.4 + (Math.sin(Date.now() / 100) * 0.2);
+    
+    // Outer shield glow
+    ctx.strokeStyle = `rgba(55, 214, 255, ${shieldAlpha})`;
+    ctx.lineWidth = 3;
+    ctx.shadowBlur = 20;
+    ctx.shadowColor = '#37d6ff';
+    ctx.beginPath();
+    ctx.arc(0, 0, shieldSize / 2, 0, Math.PI * 2);
+    ctx.stroke();
+    
+    // Inner shield ring
+    ctx.strokeStyle = `rgba(144, 224, 255, ${shieldAlpha * 0.7})`;
+    ctx.lineWidth = 2;
+    ctx.shadowBlur = 10;
+    ctx.beginPath();
+    ctx.arc(0, 0, shieldSize / 2 - 2, 0, Math.PI * 2);
+    ctx.stroke();
+    
+    ctx.shadowBlur = 0;
+  }
   
   // X-wing body (central fuselage)
   ctx.fillStyle = '#ffffff';
@@ -2012,6 +2200,10 @@ function handleKey(event, isDown) {
   if (event.code === 'ArrowDown' || event.code === 'KeyS') inputs.down = isDown;
   if (event.code === 'Space') {
     inputs.shoot = isDown;
+    event.preventDefault();
+  }
+  if (event.code === 'ShiftLeft' || event.code === 'ShiftRight') {
+    inputs.shield = isDown;
     event.preventDefault();
   }
   if (event.code === 'Enter' && isDown) {
