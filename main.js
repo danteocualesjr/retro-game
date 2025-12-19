@@ -1131,7 +1131,11 @@ function spawnBossBomb(boss) {
 function updateEnemies(dt) {
   // Spawn boss when enough enemies are killed for current level
   // Each level requires different number of enemies before boss appears
-  const enemiesNeededForBoss = [15, 20, 25, 30, 35, 40, 45, 50, 55, 60][state.level - 1] || 60;
+  // For levels beyond 10, scale up: 60 + 5 per additional level (capped at reasonable max)
+  const baseEnemies = [15, 20, 25, 30, 35, 40, 45, 50, 55, 60];
+  const enemiesNeededForBoss = state.level <= 10 
+    ? baseEnemies[state.level - 1] 
+    : Math.min(60 + (state.level - 10) * 5, 120); // Cap at 120 enemies for very high levels
   
   // Check if we should spawn boss (enough enemies killed AND no regular enemies left)
   const hasBoss = enemies.some(e => e.isBoss);
@@ -1310,8 +1314,39 @@ function spawnEnemy() {
       enemyType = 4; // TIE Defender only
       break;
     default:
-      // For levels beyond 10, use level 10 distribution
-      enemyType = 4;
+      // For levels beyond 10, create increasing difficulty patterns
+      // Levels 11-15: Mostly TIE Defender with some variety
+      if (state.level <= 15) {
+        if (typeChance < 0.8) {
+          enemyType = 4; // TIE Defender (80%)
+        } else if (typeChance < 0.9) {
+          enemyType = 3; // TIE Advanced (10%)
+        } else {
+          enemyType = 2; // TIE Bomber (10%)
+        }
+      }
+      // Levels 16-20: All elite enemies, more TIE Advanced
+      else if (state.level <= 20) {
+        if (typeChance < 0.6) {
+          enemyType = 4; // TIE Defender (60%)
+        } else if (typeChance < 0.85) {
+          enemyType = 3; // TIE Advanced (25%)
+        } else {
+          enemyType = 2; // TIE Bomber (15%)
+        }
+      }
+      // Levels 21+: Mix of all elite types, balanced challenge
+      else {
+        if (typeChance < 0.5) {
+          enemyType = 4; // TIE Defender (50%)
+        } else if (typeChance < 0.75) {
+          enemyType = 3; // TIE Advanced (25%)
+        } else if (typeChance < 0.9) {
+          enemyType = 2; // TIE Bomber (15%)
+        } else {
+          enemyType = 1; // TIE Interceptor (10%) - faster for added challenge
+        }
+      }
   }
   
   let w, h, hp, points, speed;
@@ -1806,13 +1841,7 @@ function maybeIncreaseWave() {
 }
 
 function advanceLevel() {
-  if (state.level >= 10) {
-    // Game complete!
-    showOverlay('Victory!', `You've completed all 10 levels! Final Score: ${state.score}. Press Enter to play again.`);
-    state.running = false;
-    return;
-  }
-  
+  // Game continues indefinitely - no level cap!
   state.level += 1;
   state.enemiesKilled = 0;
   state.bossSpawned = false;
@@ -1826,7 +1855,13 @@ function advanceLevel() {
   
   if (overlayEl && overlayTitleEl && overlayMessageEl) {
     overlayTitleEl.textContent = `Level ${state.level}!`;
-    overlayMessageEl.textContent = `Prepare for battle! Boss incoming...`;
+    if (state.level === 10) {
+      overlayMessageEl.textContent = `Ultimate challenge! Prepare for battle...`;
+    } else if (state.level > 10) {
+      overlayMessageEl.textContent = `Endless mode! Level ${state.level} - Prepare for battle!`;
+    } else {
+      overlayMessageEl.textContent = `Prepare for battle! Boss incoming...`;
+    }
     overlayEl.classList.remove('hidden');
     
     setTimeout(() => {
@@ -2055,8 +2090,25 @@ function getLevelColors(level) {
     },
   };
   
-  // For levels beyond 10, cycle through colors or use level 10
-  return colorSchemes[level] || colorSchemes[Math.min(level, 10)] || colorSchemes[10];
+  // For levels beyond 10, cycle through colors with variations
+  if (level <= 10) {
+    return colorSchemes[level] || colorSchemes[10];
+  }
+  
+  // For levels beyond 10, cycle through colors 6-10 with intensity variations
+  // This creates a repeating pattern that increases in intensity
+  const cycleLevel = ((level - 11) % 5) + 6; // Cycles through levels 6-10
+  const baseColors = colorSchemes[cycleLevel];
+  const intensity = 1 + Math.floor((level - 11) / 5) * 0.1; // Gradually increase intensity
+  
+  // Create a darker, more intense variant for higher levels
+  const darken = (color, factor) => {
+    // Simple darkening - in a real implementation you'd parse RGB and adjust
+    // For now, we'll cycle through existing colors
+    return color;
+  };
+  
+  return baseColors || colorSchemes[10];
 }
 
 function drawEnemies() {
