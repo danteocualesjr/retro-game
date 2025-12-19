@@ -1426,15 +1426,16 @@ function spawnBodyguards() {
   console.log('Spawning bodyguards at player position:', player.x, player.y);
   state.bodyguardsActive = true;
   
-  // Create two bodyguards - positioned independently
+  // Create two bodyguards - positioned independently (revolve around player)
   bodyguards.push({
     x: player.x - 100,
     y: player.y - 80,
     w: 28,
     h: 22,
     cooldown: 0,
-    shootInterval: 0.15, // Rapid fire - shoot every 0.15 seconds
+    shootInterval: 0.25, // Wide fire - shoot every 0.25 seconds
     patrolPhase: 0, // Start at different phases for variety
+    isIndependent: false, // Revolves around player
   });
   
   bodyguards.push({
@@ -1443,8 +1444,22 @@ function spawnBodyguards() {
     w: 28,
     h: 22,
     cooldown: 0,
-    shootInterval: 0.3,
+    shootInterval: 0.25, // Wide fire - shoot every 0.25 seconds
     patrolPhase: Math.PI, // Start at opposite phase
+    isIndependent: false, // Revolves around player
+  });
+  
+  // Third bodyguard - independent movement
+  bodyguards.push({
+    x: canvas.width / 2,
+    y: canvas.height * 0.3,
+    w: 28,
+    h: 22,
+    cooldown: 0,
+    shootInterval: 0.25, // Wide fire - shoot every 0.25 seconds
+    patrolPhase: 0,
+    isIndependent: true, // Moves autonomously
+    independentPhase: 0, // For independent movement pattern
   });
   
   sounds.shieldActivate(); // Use shield sound for bodyguard spawn
@@ -1471,37 +1486,67 @@ function updateBodyguards(dt) {
       bg.patrolPhase = Math.random() * Math.PI * 2; // Random starting phase
     }
     
-    // Independent movement - patrol pattern around player area
-    const centerX = player.x;
-    const centerY = player.y - 100; // Stay above player
-    const patrolRadius = 120;
-    const patrolSpeed = 1.5;
-    
-    bg.patrolPhase += dt * patrolSpeed;
-    
-    // Circular patrol pattern around player area
-    const offsetX = Math.cos(bg.patrolPhase) * patrolRadius;
-    const offsetY = Math.sin(bg.patrolPhase) * patrolRadius * 0.6; // Flatten the ellipse
-    
-    const targetX = centerX + offsetX;
-    const targetY = centerY + offsetY;
-    
-    // Smoothly move toward patrol position
-    const dx = targetX - bg.x;
-    const dy = targetY - bg.y;
-    const distance = Math.sqrt(dx * dx + dy * dy);
-    
-    if (distance > 5) {
-      const speed = 300; // Movement speed
-      bg.x += (dx / distance) * speed * dt;
-      bg.y += (dy / distance) * speed * dt;
+    // Movement pattern - independent bodyguard moves differently
+    if (bg.isIndependent) {
+      // Independent bodyguard - autonomous screen-wide patrol
+      if (bg.independentPhase === undefined) {
+        bg.independentPhase = 0;
+      }
+      
+      bg.independentPhase += dt * 0.8; // Movement speed
+      
+      // Create a figure-8 pattern across the screen
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height * 0.3; // Stay in upper third of screen
+      const radiusX = canvas.width * 0.35; // Horizontal movement range
+      const radiusY = canvas.height * 0.2; // Vertical movement range
+      
+      const targetX = centerX + Math.sin(bg.independentPhase) * radiusX;
+      const targetY = centerY + Math.sin(bg.independentPhase * 2) * radiusY;
+      
+      // Smoothly move toward target position
+      const dx = targetX - bg.x;
+      const dy = targetY - bg.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      
+      if (distance > 5) {
+        const speed = 250; // Movement speed
+        bg.x += (dx / distance) * speed * dt;
+        bg.y += (dy / distance) * speed * dt;
+      }
+    } else {
+      // Regular bodyguards - patrol pattern around player area
+      const centerX = player.x;
+      const centerY = player.y - 100; // Stay above player
+      const patrolRadius = 120;
+      const patrolSpeed = 1.5;
+      
+      bg.patrolPhase += dt * patrolSpeed;
+      
+      // Circular patrol pattern around player area
+      const offsetX = Math.cos(bg.patrolPhase) * patrolRadius;
+      const offsetY = Math.sin(bg.patrolPhase) * patrolRadius * 0.6; // Flatten the ellipse
+      
+      const targetX = centerX + offsetX;
+      const targetY = centerY + offsetY;
+      
+      // Smoothly move toward patrol position
+      const dx = targetX - bg.x;
+      const dy = targetY - bg.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      
+      if (distance > 5) {
+        const speed = 300; // Movement speed
+        bg.x += (dx / distance) * speed * dt;
+        bg.y += (dy / distance) * speed * dt;
+      }
     }
     
     // Keep bodyguards on screen and in reasonable bounds
     bg.x = Math.max(bg.w / 2, Math.min(canvas.width - bg.w / 2, bg.x));
     bg.y = Math.max(bg.h / 2, Math.min(canvas.height - bg.h / 2, bg.y));
     
-    // Bodyguard shooting logic - Wide rapid fire
+    // Bodyguard shooting logic - Wide fire
     bg.cooldown -= dt;
     if (bg.cooldown <= 0) {
       // Find nearest enemy to shoot at
@@ -1520,17 +1565,17 @@ function updateBodyguards(dt) {
       }
       
       if (nearestEnemy) {
-        // Wide rapid fire - shoot 4 bullets in a spread pattern
+        // Wide fire - shoot 3 bullets in a spread pattern
         const dx = nearestEnemy.x - bg.x;
         const dy = nearestEnemy.y - bg.y;
         const baseAngle = Math.atan2(dy, dx);
         const spreadAngle = 20 * (Math.PI / 180); // 20 degree spread
-        const bulletCount = 4;
+        const bulletCount = 3;
         const speed = 500;
         
         for (let i = 0; i < bulletCount; i++) {
           // Calculate spread offset
-          const offset = (i - (bulletCount - 1) / 2) * (spreadAngle / (bulletCount - 1));
+          const offset = (i - (bulletCount - 1) / 2) * (spreadAngle / (bulletCount - 1 || 1));
           const angle = baseAngle + offset;
           
           bodyguardBullets.push({
