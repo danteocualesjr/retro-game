@@ -74,6 +74,7 @@ function initDOM() {
   }
   
   if (!overlay || !startBtn) {
+    
     console.warn('Overlay or startBtn not found, but continuing...', {
       overlay: !!overlay,
       startBtn: !!startBtn
