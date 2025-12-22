@@ -629,9 +629,12 @@ const particles = [];
 const stars = []; // Will be initialized when canvas is ready
 const bodyguards = []; // Player's bodyguard spaceships
 const bodyguardBullets = []; // Bullets fired by bodyguards
+const asteroids = []; // Asteroids
 
 let spawnTimer = 0;
 let spawnInterval = 1.35;
+let asteroidSpawnTimer = 0;
+let asteroidSpawnInterval = 3.0; // Spawn asteroid every 3 seconds
 
 function resetGame() {
   if (!canvas) {
@@ -666,6 +669,8 @@ function resetGame() {
   particles.length = 0;
   bodyguards.length = 0;
   bodyguardBullets.length = 0;
+  asteroids.length = 0;
+  asteroidSpawnTimer = 0;
   
   // Initialize stars if not already done or if array is empty
   if (stars.length === 0 && canvas && canvas.width && canvas.height) {
@@ -886,6 +891,7 @@ function update(dt) {
   updateEnemyBullets(dt);
   updateBombs(dt);
   updateEnemies(dt);
+  updateAsteroids(dt);
   updateBodyguards(dt);
   updateBodyguardBullets(dt);
   updateParticles(dt);
@@ -1210,6 +1216,65 @@ function updateEnemies(dt) {
       if (e.y - e.h > canvas.height + 20) {
         enemies.splice(i, 1);
       }
+    }
+  }
+}
+
+function spawnAsteroid() {
+  const size = 30 + Math.random() * 40; // Random size between 30-70
+  const speed = 60 + Math.random() * 80; // Random speed
+  const rotationSpeed = (Math.random() - 0.5) * 3; // Random rotation speed
+  
+  // Create irregular polygon shape for asteroid
+  const vertices = 8 + Math.floor(Math.random() * 4); // 8-11 vertices
+  const shape = [];
+  for (let i = 0; i < vertices; i++) {
+    const angle = (Math.PI * 2 * i) / vertices;
+    const radius = size * (0.7 + Math.random() * 0.3); // Vary radius for irregular shape
+    shape.push({
+      x: Math.cos(angle) * radius,
+      y: Math.sin(angle) * radius
+    });
+  }
+  
+  asteroids.push({
+    x: Math.random() * canvas.width,
+    y: -size,
+    w: size * 2,
+    h: size * 2,
+    size: size,
+    speed: speed,
+    rotation: 0,
+    rotationSpeed: rotationSpeed,
+    shape: shape,
+    hp: Math.ceil(size / 20), // Larger asteroids have more HP
+    points: Math.ceil(size / 10) * 5, // Points based on size
+  });
+}
+
+function updateAsteroids(dt) {
+  // Spawn asteroids periodically
+  asteroidSpawnTimer -= dt;
+  if (asteroidSpawnTimer <= 0) {
+    spawnAsteroid();
+    asteroidSpawnTimer = asteroidSpawnInterval;
+  }
+  
+  for (let i = asteroids.length - 1; i >= 0; i -= 1) {
+    const a = asteroids[i];
+    
+    // Move asteroid down
+    a.y += a.speed * dt;
+    
+    // Add slight horizontal drift
+    a.x += Math.sin(performance.now() * 0.001 + a.rotation) * 30 * dt;
+    
+    // Rotate asteroid
+    a.rotation += a.rotationSpeed * dt;
+    
+    // Remove if off screen
+    if (a.y - a.size > canvas.height + 50) {
+      asteroids.splice(i, 1);
     }
   }
 }
@@ -1730,6 +1795,62 @@ function checkCollisions() {
     }
   }
   
+  // Bullet vs asteroid
+  for (let i = asteroids.length - 1; i >= 0; i -= 1) {
+    const a = asteroids[i];
+    for (let j = bullets.length - 1; j >= 0; j -= 1) {
+      const b = bullets[j];
+      if (rectsIntersect(a, b)) {
+        bullets.splice(j, 1);
+        const damage = b.damage || 1;
+        a.hp -= damage;
+        spawnHitParticles(a.x, a.y, '#888888', 8);
+        if (a.hp <= 0) {
+          asteroids.splice(i, 1);
+          state.score += a.points || 10;
+          
+          // Update high score if needed
+          if (state.score > state.highScore) {
+            state.highScore = state.score;
+            saveHighScore(state.highScore);
+          }
+          
+          spawnHitParticles(a.x, a.y, '#666666', 20);
+          sounds.explosion();
+        }
+        break;
+      }
+    }
+  }
+  
+  // Bodyguard bullets vs asteroid
+  for (let i = asteroids.length - 1; i >= 0; i -= 1) {
+    const a = asteroids[i];
+    for (let j = bodyguardBullets.length - 1; j >= 0; j -= 1) {
+      const b = bodyguardBullets[j];
+      if (rectsIntersect(a, b)) {
+        bodyguardBullets.splice(j, 1);
+        const damage = b.damage || 1;
+        a.hp -= damage;
+        spawnHitParticles(a.x, a.y, '#888888', 8);
+        if (a.hp <= 0) {
+          asteroids.splice(i, 1);
+          state.score += a.points || 10;
+          
+          // Update high score if needed
+          if (state.score > state.highScore) {
+            state.highScore = state.score;
+            saveHighScore(state.highScore);
+          }
+          
+          spawnHitParticles(a.x, a.y, '#666666', 20);
+          sounds.explosion();
+        }
+        break;
+      }
+    }
+  }
+  
   // Bodyguard bullets vs enemy
   for (let i = enemies.length - 1; i >= 0; i -= 1) {
     const e = enemies[i];
@@ -1820,6 +1941,24 @@ function checkCollisions() {
       }
     }
   }
+  
+  // Asteroids vs player
+  for (let i = asteroids.length - 1; i >= 0; i -= 1) {
+    const a = asteroids[i];
+    if (rectsIntersect(a, player)) {
+      if (player.shield.active) {
+        // Shield blocks the asteroid
+        spawnHitParticles(a.x, a.y, '#37d6ff', 15);
+        asteroids.splice(i, 1);
+        sounds.shieldBlock();
+      } else {
+        asteroids.splice(i, 1);
+        spawnHitParticles(player.x, player.y, '#666666', 20);
+        sounds.explosion();
+        loseLife();
+      }
+    }
+  }
 }
 
 function loseLife() {
@@ -1887,6 +2026,7 @@ function draw() {
   drawEnemyBullets();
   drawBombs();
   drawEnemies();
+  drawAsteroids();
   drawParticles();
   
   // Draw pause overlay if paused
@@ -2698,6 +2838,44 @@ function drawBoss(e) {
     ctx.font = '12px "Press Start 2P"';
     ctx.textAlign = 'center';
     ctx.fillText(`BOSS HP: ${e.hp}/${e.maxHp}`, 0, -height / 2 - 45);
+  }
+}
+
+function drawAsteroids() {
+  for (const a of asteroids) {
+    ctx.save();
+    ctx.translate(a.x, a.y);
+    ctx.rotate(a.rotation);
+    
+    // Draw asteroid as irregular polygon
+    ctx.fillStyle = '#666666';
+    ctx.strokeStyle = '#444444';
+    ctx.lineWidth = 2;
+    
+    ctx.beginPath();
+    for (let i = 0; i < a.shape.length; i++) {
+      const vertex = a.shape[i];
+      if (i === 0) {
+        ctx.moveTo(vertex.x, vertex.y);
+      } else {
+        ctx.lineTo(vertex.x, vertex.y);
+      }
+    }
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    
+    // Add some surface details
+    ctx.fillStyle = '#555555';
+    ctx.beginPath();
+    ctx.arc(a.shape[0].x * 0.3, a.shape[0].y * 0.3, a.size * 0.1, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.beginPath();
+    ctx.arc(a.shape[Math.floor(a.shape.length / 2)].x * 0.4, a.shape[Math.floor(a.shape.length / 2)].y * 0.4, a.size * 0.08, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.restore();
   }
 }
 
