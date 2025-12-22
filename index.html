@@ -3,21 +3,23 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Star Defender</title>
+  <title>Retro Star Defender</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <main class="frame">
     
     <header class="top-bar">
-      <div class="title">Star Defender</div>
+      <div class="title">Retro Star Defender</div>
       <div class="controls-legend">
-        <span>⌨️ WASD Move</span>
-        <span>🎯 Space Fire</span>
-        <span>🛡️ Shift Shield</span>
-        <span>🔫 1-9 Weapons</span>
+        <span>← → Move</span>
+        <span>↑ ↓ Forward/Back</span>
+        <span>Space Fire</span>
+        <span>Shift Shield</span>
+        <span>1-9 Fire Mode</span>
       </div>
       <div class="hud">
         <span id="score-label">Score: <strong id="score">0</strong></span>
@@ -39,10 +41,10 @@
       <div id="overlay" class="overlay" role="status" aria-live="polite">
         <div class="panel">
           <div class="panel-glow"></div>
-          <h1 id="overlay-title">Star Defender</h1>
-          <p id="overlay-message">Navigate with Arrow Keys or WASD. Fire with Space. Toggle shield with Shift. Switch weapons with 1-9. Summon wingmen with 0. Pause with P.</p>
+          <h1 id="overlay-title">Retro Star Defender</h1>
+          <p id="overlay-message">Move with Arrow Keys or WASD. Shoot with Space. Hold Shift to activate shield. Press 1-9 to change fire mode. Press 0 to toggle bodyguards. Press P to pause. Press Enter to start.</p>
           <button id="start-btn" type="button" onclick="if (typeof startGame === 'function') { startGame(); } else { console.error('startGame function not found'); }">
-            <span class="btn-text">Launch Mission</span>
+            <span class="btn-text">Start</span>
             <span class="btn-glow"></span>
           </button>
         </div>
@@ -51,14 +53,15 @@
 
     <footer class="footer">
       <div class="controls">
-        <span>🚀 WASD/Arrows</span>
-        <span>🔥 Space</span>
-        <span>🛡️ Shift</span>
-        <span>🔫 1-9</span>
-        <span>👥 0</span>
-        <span>⏸️ P</span>
+        <span>Move: Arrow Keys / WASD</span>
+        <span>Shoot: Space</span>
+        <span>Shield: Shift</span>
+        <span>Fire Mode: 1-9</span>
+        <span>Bodyguards: 0</span>
+        <span>Pause: P</span>
+        <span>Restart: Enter</span>
       </div>
-      <div class="credit">⭐ HTML5 Canvas Game Engine</div>
+      <div class="credit">Built for you &middot; Pure HTML + JS Canvas</div>
     </footer>
   </main>
 
