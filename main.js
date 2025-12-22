@@ -795,6 +795,10 @@ function showOverlay(title, message) {
     overlayTitle.textContent = title;
     overlayMessage.textContent = message;
     overlay.classList.remove('hidden');
+    // Reset inline styles set by hideOverlay
+    overlay.style.display = '';
+    overlay.style.visibility = '';
+    overlay.style.pointerEvents = '';
     console.log('Overlay shown:', title);
   } else {
     console.error('Overlay elements not found in showOverlay()', {overlay, overlayTitle, overlayMessage});
