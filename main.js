@@ -686,7 +686,7 @@ function resetGame() {
   }
   
   updateHud();
-  showOverlay('Retro Star Defender', 'Move with Arrow Keys or WASD. Shoot with Space. Press Enter or click Start to play.');
+  showOverlay('Star Defender', 'Navigate with Arrow Keys or WASD. Fire with Space. Press Enter or click Launch to begin.');
 }
 
 function startGame() {
@@ -784,9 +784,9 @@ function gameOver() {
   sounds.gameOver();
   const isNewHighScore = state.score > state.highScore;
   const message = isNewHighScore
-    ? `New High Score: ${state.score}! 🎉\nPress Enter or click Start to try again.`
-    : `Score: ${state.score}\nHigh Score: ${state.highScore}\nPress Enter or click Start to try again.`;
-  showOverlay('Game Over', message);
+    ? `🏆 New High Score: ${state.score}!\nPress Enter to launch again.`
+    : `Final Score: ${state.score}\nBest: ${state.highScore}\nPress Enter to launch again.`;
+  showOverlay('Mission Failed', message);
   
 }
 
@@ -2034,7 +2034,7 @@ function draw() {
     ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = '#37d6ff';
-    ctx.font = '32px "Press Start 2P"';
+    ctx.font = '700 32px "Orbitron", sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.shadowBlur = 20;
@@ -2835,7 +2835,7 @@ function drawBoss(e) {
     
     // HP text
     ctx.fillStyle = '#ffffff';
-    ctx.font = '12px "Press Start 2P"';
+    ctx.font = '600 12px "Orbitron", sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText(`BOSS HP: ${e.hp}/${e.maxHp}`, 0, -height / 2 - 45);
   }
