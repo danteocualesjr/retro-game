@@ -3,32 +3,32 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Retro Star Defender</title>
+  <title>STAR DEFENDER // ARCADE</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css?v=2" />
 </head>
 <body>
   <main class="frame">
     
     <header class="top-bar">
-      <div class="title">Retro Star Defender</div>
+      <div class="title">★ STAR DEFENDER ★</div>
       <div class="controls-legend">
-        <span>← → Move</span>
-        <span>↑ ↓ Forward/Back</span>
-        <span>Space Fire</span>
-        <span>Shift Shield</span>
-        <span>1-9 Fire Mode</span>
+        <span>◄► MOVE</span>
+        <span>▲▼ THRUST</span>
+        <span>⎵ FIRE</span>
+        <span>⇧ SHIELD</span>
+        <span>1-9 WEAPONS</span>
       </div>
       <div class="hud">
-        <span id="score-label">Score: <strong id="score">0</strong></span>
-        <span id="high-score-label">Best: <strong id="high-score">0</strong></span>
-        <span id="level-label">Level: <strong id="level">1</strong></span>
-        <span id="wave-label">Wave: <strong id="wave">1</strong></span>
-        <span id="lives-label">Lives: <span id="lives" class="hearts"></span></span>
-        <span id="fire-mode-label">Fire: <strong id="fire-mode">Normal</strong></span>
-        <span id="shield-label">Shield: <strong id="shield">🛡️ OFF</strong></span>
+        <span id="score-label">SCORE <strong id="score">0</strong></span>
+        <span id="high-score-label">HI-SCORE <strong id="high-score">0</strong></span>
+        <span id="level-label">LVL <strong id="level">1</strong></span>
+        <span id="wave-label">WAVE <strong id="wave">1</strong></span>
+        <span id="lives-label">LIVES <span id="lives" class="hearts"></span></span>
+        <span id="fire-mode-label">WPN <strong id="fire-mode">Normal</strong></span>
+        <span id="shield-label">SHD <strong id="shield">🛡️ OFF</strong></span>
       </div>
       <button id="pause-toggle" type="button" class="sound-btn" title="Pause/Resume">⏸️</button>
       <button id="sound-toggle" type="button" class="sound-btn" title="Toggle Sound">🔊</button>
@@ -41,10 +41,10 @@
       <div id="overlay" class="overlay" role="status" aria-live="polite">
         <div class="panel">
           <div class="panel-glow"></div>
-          <h1 id="overlay-title">Retro Star Defender</h1>
-          <p id="overlay-message">Move with Arrow Keys or WASD. Shoot with Space. Hold Shift to activate shield. Press 1-9 to change fire mode. Press 0 to toggle bodyguards. Press P to pause. Press Enter to start.</p>
+          <h1 id="overlay-title">STAR DEFENDER</h1>
+          <p id="overlay-message">Arrow Keys or WASD to move • SPACE to fire • SHIFT for shield • 1-9 to switch weapons • 0 for bodyguards • P to pause</p>
           <button id="start-btn" type="button" onclick="if (typeof startGame === 'function') { startGame(); } else { console.error('startGame function not found'); }">
-            <span class="btn-text">Start</span>
+            <span class="btn-text">INSERT COIN</span>
             <span class="btn-glow"></span>
           </button>
         </div>
@@ -53,19 +53,17 @@
 
     <footer class="footer">
       <div class="controls">
-        <span>Move: Arrow Keys / WASD</span>
-        <span>Shoot: Space</span>
-        <span>Shield: Shift</span>
-        <span>Fire Mode: 1-9</span>
-        <span>Bodyguards: 0</span>
-        <span>Pause: P</span>
-        <span>Restart: Enter</span>
+        <span>MOVE: ◄►▲▼</span>
+        <span>FIRE: SPACE</span>
+        <span>SHIELD: SHIFT</span>
+        <span>WEAPONS: 1-9</span>
+        <span>SQUAD: 0</span>
+        <span>PAUSE: P</span>
       </div>
-      <div class="credit">Built for you &middot; Pure HTML + JS Canvas</div>
+      <div class="credit">CREDIT 01 • PRESS START</div>
     </footer>
   </main>
 
-  <script src="main.js"></script>
+  <script src="main.js?v=2"></script>
 </body>
 </html>
-
