@@ -686,7 +686,7 @@ function resetGame() {
   }
   
   updateHud();
-  showOverlay('STAR DEFENDER', 'Arrow Keys or WASD to move • SPACE to fire • SHIFT for shield • 1-9 to switch weapons • 0 for bodyguards • P to pause');
+  showOverlay('Retro Star Defender', 'Move with Arrow Keys or WASD. Shoot with Space. Press Enter or click Start to play.');
 }
 
 function startGame() {
@@ -784,9 +784,9 @@ function gameOver() {
   sounds.gameOver();
   const isNewHighScore = state.score > state.highScore;
   const message = isNewHighScore
-    ? `★ NEW HIGH SCORE: ${state.score} ★\nINSERT COIN TO CONTINUE`
-    : `FINAL SCORE: ${state.score}\nHIGH SCORE: ${state.highScore}\nINSERT COIN TO CONTINUE`;
-  showOverlay('GAME OVER', message);
+    ? `New High Score: ${state.score}! 🎉\nPress Enter or click Start to try again.`
+    : `Score: ${state.score}\nHigh Score: ${state.highScore}\nPress Enter or click Start to try again.`;
+  showOverlay('Game Over', message);
   
 }
 
@@ -1998,13 +1998,13 @@ function advanceLevel() {
   const overlayMessageEl = overlayMessage || document.getElementById('overlay-message');
   
   if (overlayEl && overlayTitleEl && overlayMessageEl) {
-    overlayTitleEl.textContent = `STAGE ${state.level}`;
+    overlayTitleEl.textContent = `Level ${state.level}!`;
     if (state.level === 10) {
-      overlayMessageEl.textContent = `★ FINAL BOSS ★ PREPARE FOR BATTLE`;
+      overlayMessageEl.textContent = `Ultimate challenge! Prepare for battle...`;
     } else if (state.level > 10) {
-      overlayMessageEl.textContent = `ENDLESS MODE • STAGE ${state.level} • GET READY`;
+      overlayMessageEl.textContent = `Endless mode! Level ${state.level} - Prepare for battle!`;
     } else {
-      overlayMessageEl.textContent = `BOSS INCOMING • GET READY`;
+      overlayMessageEl.textContent = `Prepare for battle! Boss incoming...`;
     }
     overlayEl.classList.remove('hidden');
     
